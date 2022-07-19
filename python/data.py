@@ -2,6 +2,9 @@ import pandas as pd
 
 trip_path_residents = 'data/Residents_TripData_KendallSquareCBGs_thursday_sep2019-nov2019.csv'
 trip_path_workers = 'data/WorkersStudents_TripData_KendallSquareCBGs_thursday_sep2019-nov2019.csv'
+people_path_residents = 'data/Residents_PeopleData_KendallSquareCBGs_thursday_sep2019-nov2019.csv'
+people_path_workers = 'data/WorkersStudents_PeopleData_KendallSquareCBGs_thursday_sep2019-nov2019.csv'
+bluebikes_path = 'data/bluebikes/202206-bluebikes-tripdata.csv'
 
 def duplicate_values(data, column):
     """
@@ -51,6 +54,12 @@ def sort_data(data, column):
     """
     return data.sort_values(by=column)
 
+def filter_data(data, column, function):
+    """
+    Filters the dataframe by a function.
+    """
+    return data[data[column].apply(function)]
+
 def get_data(file_name):
     """
     Reads in a csv file and returns a pandas dataframe.
@@ -80,3 +89,10 @@ def combined_unique_rows(data1, data2, column):
     Returns each unique row from the combined dataframe.
     """
     return remove_duplicate_values(concat_data(data1, data2), column)
+
+def transform_data_new_column(data, column, new_column, function):
+    """
+    Transforms the dataframe by adding a new column.
+    """
+    data[new_column] = data[column].apply(function)
+    return data
