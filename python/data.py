@@ -4,7 +4,7 @@ trip_path_residents = 'data/Residents_TripData_KendallSquareCBGs_thursday_sep201
 trip_path_workers = 'data/WorkersStudents_TripData_KendallSquareCBGs_thursday_sep2019-nov2019.csv'
 people_path_residents = 'data/Residents_PeopleData_KendallSquareCBGs_thursday_sep2019-nov2019.csv'
 people_path_workers = 'data/WorkersStudents_PeopleData_KendallSquareCBGs_thursday_sep2019-nov2019.csv'
-bluebikes_path = 'data/bluebikes/202206-bluebikes-tripdata.csv'
+bluebikes_path = 'data/bluebikes/trips_with_bgrp.csv'
 
 def duplicate_values(data, column):
     """
