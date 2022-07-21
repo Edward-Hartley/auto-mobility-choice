@@ -79,23 +79,33 @@ print("Cycle trips total {}, bluebikes trips {}, ratio {:.2f}, difference {}".fo
 
 # From stored data (has to be generated) replace selected cycle trips with bluebikes trips
 ###############################################################################
+def match_by_distance(bluebikes_trip, matching_trip, origin_threshold, destination_threshold, hrs, all_trips):
+    matching_trip = matching_trip[matching_trip.apply(lambda x: get_distance(bluebikes_trip['start station latitude'], bluebikes_trip['start station longitude'], x['origin_lat'], x['origin_lng']) < origin_threshold, axis=1)]
+    matching_trip = matching_trip[matching_trip.apply(lambda x: get_distance(bluebikes_trip['end station latitude'], bluebikes_trip['end station longitude'], x['destination_lat'], x['destination_lng']) < destination_threshold, axis=1)]
+    if matching_trip.shape[0] != 0:
+        trip_matched = matching_trip.iloc[0]
+        all_trips.loc[trip_matched.activity_id, 'mode'] = 'SHARED_BIKE'
+        all_trips.loc[trip_matched.activity_id, 'distance_from_bluebikes'] = (
+            get_distance(bluebikes_trip['start station latitude'], bluebikes_trip['start station longitude'], trip_matched['origin_lat'], trip_matched['origin_lng'])
+        )
+        all_trips.loc[trip_matched.activity_id, 'distance_from_destination'] = (
+            get_distance(bluebikes_trip['end station latitude'], bluebikes_trip['end station longitude'], trip_matched['destination_lat'], trip_matched['destination_lng'])
+        )
+        all_trips.loc[trip_matched.activity_id, 'hours_from_bluebikes'] = hrs
+        return True
+    return False
+
 def replace_bike_trip(bluebikes_trip, all_trips):
     # find the matching trip in the all_trips dataframe
-    for hrs in range(6):
+    for hrs in range(12):
         matching_trip = all_trips[all_trips['mode'] == 'BIKING']
         matching_trip = matching_trip[((matching_trip['start_local_hour'] + hrs) % 24 == bluebikes_trip['starthour'])]
-        matching_trip = matching_trip[matching_trip.apply(lambda x: get_distance(bluebikes_trip['start station latitude'], bluebikes_trip['start station longitude'], x['origin_lat'], x['origin_lng']) < 600, axis=1)]
-        matching_trip = matching_trip[matching_trip.apply(lambda x: get_distance(bluebikes_trip['end station latitude'], bluebikes_trip['end station longitude'], x['destination_lat'], x['destination_lng']) < 600, axis=1)]
-        if matching_trip.shape[0] != 0:
-            trip_matched = matching_trip.iloc[0]
-            all_trips.loc[trip_matched.activity_id, 'mode'] = 'SHARED_BIKE'
-            all_trips.loc[trip_matched.activity_id, 'distance_from_bluebikes'] = (
-                get_distance(bluebikes_trip['start station latitude'], bluebikes_trip['start station longitude'], trip_matched['origin_lat'], trip_matched['origin_lng'])
-            )
-            all_trips.loc[trip_matched.activity_id, 'distance_from_destination'] = (
-                get_distance(bluebikes_trip['end station latitude'], bluebikes_trip['end station longitude'], trip_matched['destination_lat'], trip_matched['destination_lng'])
-            )
-            all_trips.loc[trip_matched.activity_id, 'hours_from_bluebikes'] = hrs
+        if match_by_distance(bluebikes_trip, matching_trip, 500, 1000, hrs, all_trips):
+            return True
+    for hrs in range(12):
+        matching_trip = all_trips[all_trips['mode'] == 'BIKING']
+        matching_trip = matching_trip[((matching_trip['start_local_hour'] + hrs) % 24 == bluebikes_trip['starthour'])]
+        if match_by_distance(bluebikes_trip, matching_trip, 600, 10000, hrs, all_trips):
             return True
     return False
 
