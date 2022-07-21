@@ -1,4 +1,5 @@
 import json
+from time import sleep
 import urllib.request
 from geopy.distance import distance
 
@@ -19,3 +20,20 @@ def get_distance(lat1, lng1, lat2, lng2):
     Returns the distance in meters
     """
     return distance((lat1, lng1), (lat2, lng2)).km * 1000
+
+def get_OSRM_distance(mode, startLat, startLon, endLat, endLon):
+    """
+    Returns the directions from start to end in the specified mode
+    """
+    strLL=str(startLon) + ','+str(startLat)+';'+str(endLon)+ ','+str(endLat)
+    try:
+        with urllib.request.urlopen('http://router.project-osrm.org/route/v1/'+str(mode)+'/'+strLL+'?overview=false') as url:
+            data=json.loads(url.read().decode())
+            #in meters and seconds
+        return data['routes'][0]['distance']
+        # if the call request is unsuccessful, wait and try again
+    except:
+        print("sleeping")
+        sleep(0.1)
+        return get_OSRM_distance(mode, startLat, startLon, endLat, endLon)
+        

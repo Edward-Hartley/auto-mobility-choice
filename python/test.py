@@ -148,12 +148,10 @@ hours = all_biking_trips[all_biking_trips['hours_from_bluebikes'] < 13]
 hours = hours['hours_from_bluebikes']
 print(hours.values.sum()/hours.shape[0])
 
-
-
-
-
-
 #%%
+
+# Plot origin locations of replica bike trips by blockgroup
+
 data = cycle_trips[['origin_bgrp_lng', 'origin_bgrp_lat']].value_counts()
 data = data.to_frame(name='count').reset_index()
 data = data.loc[data['origin_bgrp_lat'] > 42.350]
@@ -169,6 +167,8 @@ data.plot.scatter(
 )
 
 #%%
+
+# Plot speeds of various modes of transport in replica data
 
 def plot_speeds(data, title):
     data = data.loc[data['duration_seconds'] != 0]
