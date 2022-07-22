@@ -1,7 +1,8 @@
 #%%
-import matplotlib.pyplot as plt
 from data import *
 from latLngMethods import get_distance
+
+#%%
 
 # From stored data (has to be generated) replace selected cycle trips with bluebikes trips
 ###############################################################################
@@ -35,10 +36,6 @@ def replace_bike_trip(bluebikes_trip, all_trips):
             return True
     return False
 
-    # replace the matching trip with the bluebikes trip
-    # all_trips.loc[all_trips['activity_id'] == matching_trip['activity_id'].values[0], 'mode'] = 'BIKING'
-    # return all_trips
-
 all_trips = get_data('./data/big_query_trips.csv')
 all_trips.set_index('activity_id', inplace=True, drop=False)
 all_trips['distance_from_bluebikes'] = 10000
@@ -48,7 +45,7 @@ all_trips['hours_from_bluebikes'] = 13
 all_trips = all_trips[all_trips['destination_bgrp'] != 'out_of_regio']
 all_trips['destination_bgrp'] = all_trips['destination_bgrp'].astype(int)
 # reduce to only the relevant mode
-all_biking_trips = all_trips[all_trips['mode'] == 'BIKING']
+all_other_trips, all_biking_trips = [x for _, x in all_trips.groupby(all_trips['mode'] == 'BIKING')]
 
 #get bluebikes trips
 bluebikes_trips_augmented = get_data('./data/bluebikes/relevant_bluebikes_trips_augmented.csv')
@@ -73,3 +70,12 @@ print("distances from destinations:", distances.values.sum()/distances.shape[0])
 hours = all_biking_trips[all_biking_trips['hours_from_bluebikes'] < 13]
 hours = hours['hours_from_bluebikes']
 print(hours.values.sum()/hours.shape[0])
+
+#%%
+
+all_trips = pd.concat([all_other_trips, all_biking_trips])
+print(all_trips['mode'].value_counts())
+
+store_data(all_trips, './data/all_trips_bluebikes_replacements.csv')
+
+# %%
