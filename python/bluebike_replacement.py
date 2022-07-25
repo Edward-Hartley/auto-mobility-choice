@@ -36,13 +36,18 @@ def replace_bike_trip(bluebikes_trip, all_trips):
             return True
     return False
 
-all_trips = get_data('./data/big_query_trips.csv')
+# source
+# all_trips = get_data('./data/big_query_trips.csv')
+origin_trips = get_data('/home/dwarddd/MIT/auto-mobility-choice/python/data/my_own_samples/origin.csv')
+destination_trips = get_data('/home/dwarddd/MIT/auto-mobility-choice/python/data/my_own_samples/destination.csv')
+all_trips = combined_unique_rows(origin_trips, destination_trips, 'activity_id')
+
 all_trips.set_index('activity_id', inplace=True, drop=False)
 all_trips['distance_from_bluebikes'] = 10000
 all_trips['distance_from_destination'] = 10000
 all_trips['hours_from_bluebikes'] = 13
 # filter out out_of_regio trips and convert to int64
-all_trips = all_trips[all_trips['destination_bgrp'] != 'out_of_regio']
+all_trips = all_trips[all_trips['destination_bgrp'] != 'out_of_region']
 all_trips['destination_bgrp'] = all_trips['destination_bgrp'].astype(int)
 # reduce to only the relevant mode
 all_other_trips, all_biking_trips = [x for _, x in all_trips.groupby(all_trips['mode'] == 'BIKING')]
