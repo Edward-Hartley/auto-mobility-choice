@@ -1,5 +1,6 @@
+#%%
+
 from collections import OrderedDict
-from enum import IntEnum    # For recording the model specification 
 
 import pandas as pd                    # For file input/output
 import numpy as np                     # For vectorized math operations
@@ -15,11 +16,11 @@ ON_DEMAND_AUTO = 4
 SHARED_BIKE = 5
 BIKING = 6
 
-all_trips = pd.read_csv('data/TODO') # TODO: replace path once file is created
+all_trips = pd.read_csv('data/full_sample_run/variables_wide.csv') # TODO: replace path once file is created
 
 # Create the list of individual specific variables
 individual_variables = [
-    'age', 'income_per_capita', 'employed', 
+    'income_per_capita', 'employed', 
     'age_youngest', 'age_oldest',
     'commuting', 'rain_cover', 'rush_hour'
     ]
@@ -37,9 +38,9 @@ def add_mode_suffixes(prefix):
 # the column name of the corresponding column that encodes that variable for
 # the given alternative.
 alt_varying_variables = {
-    'travel_time': add_mode_suffixes('tt_'),
-    'travel_cost': add_mode_suffixes('tc_'),
-    'duration_variability': add_mode_suffixes('dv_'),
+    'travel_time': add_mode_suffixes('tt'),
+    'travel_cost': add_mode_suffixes('tc'),
+    'duration_variability': add_mode_suffixes('dv'),
     'waiting_time': {PUBLIC_TRANSIT: 'waiting_time_PUBLIC_TRANSIT',
                      ON_DEMAND_AUTO: 'waiting_time_ON_DEMAND_AUTO'},
     'active_time': {WALKING: 'at_WALKING',
@@ -171,3 +172,5 @@ nested.fit_mle(init_values, constrained_pos=[0])
 
 
 
+
+# %%
