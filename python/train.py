@@ -16,13 +16,14 @@ ON_DEMAND_AUTO = 4
 SHARED_BIKE = 5
 BIKING = 6
 
-all_trips = pd.read_csv('data/full_sample_run/variables_wide.csv') # TODO: replace path once file is created
+all_trips = pd.read_csv('data/full_sample_run/variables_wide.csv')
+all_trips = all_trips.sample(frac = 0.01)
 
 # Create the list of individual specific variables
 individual_variables = [
     'income_per_capita', 'employed', 
     'age_youngest', 'age_oldest',
-    'commuting', 'rain_cover', 'rush_hour'
+    'commuting', 'rush_hour'
     ]
 
 def add_mode_suffixes(prefix):
@@ -41,20 +42,16 @@ alt_varying_variables = {
     'travel_time': add_mode_suffixes('tt'),
     'travel_cost': add_mode_suffixes('tc'),
     'duration_variability': add_mode_suffixes('dv'),
-    'waiting_time': {PUBLIC_TRANSIT: 'waiting_time_PUBLIC_TRANSIT',
-                     ON_DEMAND_AUTO: 'waiting_time_ON_DEMAND_AUTO'},
+    'waiting_time': {PUBLIC_TRANSIT: 'wt_PUBLIC_TRANSIT',
+                     ON_DEMAND_AUTO: 'wt_ON_DEMAND_AUTO'},
     'active_time': {WALKING: 'at_WALKING',
                     SHARED_BIKE: 'at_SHARED_BIKE',
                     BIKING: 'at_BIKING',
                     PUBLIC_TRANSIT: 'at_PUBLIC_TRANSIT'},
-    'rain_cover': {PRIVATE_AUTO: 'rain_cover',
-                   CARPOOL: 'rain_cover',
-                   PUBLIC_TRANSIT: 'rain_cover',
-                   ON_DEMAND_AUTO: 'rain_cover'}
     }
 
 availability_variables = {
-    PRIVATE_AUTO: 'car_available',
+    PRIVATE_AUTO: 'noncar_available',
     CARPOOL: 'noncar_available',
     WALKING: 'noncar_available',
     PUBLIC_TRANSIT: 'noncar_available',
@@ -67,7 +64,9 @@ availability_variables = {
 # It will identify the alternative associated with each row.
 custom_alt_id = 'mode_id'
 
-obs_id_column = 'activity_id'
+all_trips['custom_id'] = np.arange(all_trips.shape[0], dtype=int) + 1
+
+obs_id_column = 'custom_id'
 choice_column = 'mode_choice_int'
 
 # Perform the conversion to long-format
@@ -78,6 +77,8 @@ all_trips_long = pl.convert_wide_to_long(all_trips,
                                         obs_id_column, 
                                         choice_column,
                                         new_alt_id_name=custom_alt_id)
+
+#%%
 
 # Specify the nesting values
 nest_membership = OrderedDict()
@@ -104,22 +105,22 @@ param_names['intercept'] = ['ASC Carpool', 'ASC Walk', 'ASC Public Transit', 'AS
 # Specify the coefficients for the basic variables
 # Biking alternatives have the same coefficients for each population descriptor
 param_specification['age_youngest'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['age_youngest'] = ['Youngest Private Auto', 'Youngest Carpool', 'Youngest Walk', 'Youngest Public Transit', 'Youngest On-Demand Auto', 'Youngest Shared Bike', 'Youngest Biking']
+param_names['age_youngest'] = ['Youngest Private Auto', 'Youngest Carpool', 'Youngest Walk', 'Youngest Public Transit', 'Youngest On-Demand Auto', 'Youngest Biking']
 
 param_specification['age_oldest'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['age_oldest'] = ['Oldest Private Auto', 'Oldest Carpool', 'Oldest Walk', 'Oldest Public Transit', 'Oldest On-Demand Auto', 'Oldest Shared Bike', 'Oldest Biking']
+param_names['age_oldest'] = ['Oldest Private Auto', 'Oldest Carpool', 'Oldest Walk', 'Oldest Public Transit', 'Oldest On-Demand Auto', 'Oldest Biking']
 
 param_specification['income_per_capita'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['income_per_capita'] = ['Income Private Auto', 'Income Carpool', 'Income Walk', 'Income Public Transit', 'Income On-Demand Auto', 'Income Shared Bike', 'Income Biking']
+param_names['income_per_capita'] = ['Income Private Auto', 'Income Carpool', 'Income Walk', 'Income Public Transit', 'Income On-Demand Auto', 'Income Biking']
 
 param_specification['employed'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['employed'] = ['Employed Private Auto', 'Employed Carpool', 'Employed Walk', 'Employed Public Transit', 'Employed On-Demand Auto', 'Employed Shared Bike', 'Employed Biking']
+param_names['employed'] = ['Employed Private Auto', 'Employed Carpool', 'Employed Walk', 'Employed Public Transit', 'Employed On-Demand Auto', 'Employed Biking']
 
 param_specification['rush_hour'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['rush_hour'] = ['Rush Hour Private Auto', 'Rush Hour Carpool', 'Rush Hour Walk', 'Rush Hour Public Transit', 'Rush Hour On-Demand Auto', 'Rush Hour Shared Bike', 'Rush Hour Biking']
+param_names['rush_hour'] = ['Rush Hour Private Auto', 'Rush Hour Carpool', 'Rush Hour Walk', 'Rush Hour Public Transit', 'Rush Hour On-Demand Auto', 'Rush Hour Biking']
 
 param_specification['commuting'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['commuting'] = ['Commuting Private Auto', 'Commuting Carpool', 'Commuting Walk', 'Commuting Public Transit', 'Commuting On-Demand Auto', 'Commuting Shared Bike', 'Commuting Biking']
+param_names['commuting'] = ['Commuting Private Auto', 'Commuting Carpool', 'Commuting Walk', 'Commuting Public Transit', 'Commuting On-Demand Auto', 'Commuting Biking']
 
 # Specify the coefficients for the trip statistics variables
 param_specification['travel_time'] = [[0, 1, 2, 3, 4, 5, 6]]
@@ -128,8 +129,8 @@ param_names['travel_time'] = ['Travel Time']
 param_specification['duration_variability'] = [[0, 1, 2, 3, 4, 5, 6]]
 param_names['duration_variability'] = ['Duration Variability']
 
-param_specification['cost'] = [[0, 1, 2, 3, 4, 5, 6]]
-param_names['cost'] = ['Cost']
+param_specification['travel_cost'] = [[0, 1, 2, 3, 4, 5, 6]]
+param_names['travel_cost'] = ['Cost']
 
 param_specification['waiting_time'] = [[PUBLIC_TRANSIT, ON_DEMAND_AUTO]]
 param_names['waiting_time'] = ['Waiting Time']
