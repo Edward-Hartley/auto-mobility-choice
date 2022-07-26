@@ -2,9 +2,12 @@
 
 import numpy as np
 import pandas as pd
+import random
 
-all_trips = pd.read_csv('./data/all_trips_filtered.csv')
-all_people = pd.read_csv('./data/all_people.csv')
+#%%
+
+all_trips = pd.read_csv('./data/full_sample_run/trips_filtered.csv')
+all_people = pd.read_csv('./data/full_sample_run/people_filtered.csv')
 
 #%%
 
@@ -36,16 +39,16 @@ all_trips['mode_choice_int'] = all_trips['mode'].map(reverse_modes_dict)
 
 # %%
 
-all_trips['commuting'] = all_trips.apply(lambda row: row['tour_type'] == 'COMMUTE', axis=1)
+all_trips['commuting'] = all_trips.apply(lambda row: (row['previous_activity_type'] == 'WORK') | (row['travel_purpose'] == 'WORK'), axis=1)
 # When converting to long format only map rain_cover to appropriate modes
 all_trips['rain_cover'] = 1
 # Three highest traffic hours, could also add morning rush hour
 all_trips['rush_hour'] = all_trips.apply(lambda row: row['start_local_hour'] in [15, 16, 17], axis=1)
 
 # Calculate trip travel times, main TODO is here!
-all_trips['tt_PRIVATE_AUTO'] = all_trips.apply(lambda row: row['distance_miles'] * 1600 / driving_spd_mps, axis=1)
+all_trips['tt_PRIVATE_AUTO'] = all_trips.apply(lambda row: row['distance_meters'] / driving_spd_mps, axis=1)
 all_trips['tt_CARPOOL'] = 0
-all_trips['tt_WALK'] = all_trips.apply(lambda row: row['distance_miles'] * 1600 / walking_spd_mps, axis=1)
+all_trips['tt_WALK'] = all_trips.apply(lambda row: row['distance_meters'] / walking_spd_mps, axis=1)
 all_trips['tt_PUBLIC_TRANSIT'] = 0
 all_trips['tt_ON_DEMAND_AUTO'] = 0
 all_trips['tt_SHARED_BIKE'] = 0
@@ -84,19 +87,29 @@ all_trips['at_BIKING'] = 0
 
 # drop no longer necessary columns
 trips_variables = all_trips.drop(columns = [
-    'activity_id.2', 'Unnamed: 0', 'activity_id.1',
-    'origin_lat', 'origin_lng', 'destination_lat', 'destination_lng',
-    'household_id', 'travel_purpose', 'tour_type', 
-    'previous_activity_type', 'timezone', 'start_time', 'start_local_hour',
-    'end_time', 'end_local_hour', 'duration_minutes', 'distance_miles',
+    'activity_id.2', 'activity_id.1',
+    'travel_purpose', 'origin_us_tract', 'destination_us_tract',
+    'previous_activity_type', 'start_time', 'start_local_hour',
+    'end_time', 'end_local_hour', 'duration_seconds', 'distance_meters',
     'origin_bgrp', 'origin_bgrp_lat', 'origin_bgrp_lng', 'destination_bgrp',
-    'destination_bgrp_lat', 'destination_bgrp_lng', 'trip_type',
-    'distance_from_bluebikes', 'distance_from_destination',
-    'hours_from_bluebikes',
+    'destination_bgrp_lat', 'destination_bgrp_lng',
+    'distance_from_bb', 'distance_from_destination',
+    'hours_from_bb',
     ])
 trips_variables.set_index('activity_id', inplace=True, drop=False)
 
 # %%
 
 all_variables = trips_variables.join(people_variables, on='person_id')
+variables_no_na = all_variables.dropna(axis=0)
+
+dropped_ratios = variables_no_na['mode'].value_counts()/all_variables['mode'].value_counts()
+min_ratio = dropped_ratios.min()
+
+variables_no_na = variables_no_na[
+    variables_no_na.apply(lambda row: min_ratio/dropped_ratios[row['mode']] > random.random(), axis=1)
+    ]
+
+variables_no_na.to_csv('data/full_sample_run/variables_wide.csv')
+
 # %%
