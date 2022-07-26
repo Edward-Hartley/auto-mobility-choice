@@ -48,7 +48,7 @@ all_trips['rush_hour'] = all_trips.apply(lambda row: row['start_local_hour'] in 
 # Calculate trip travel times, main TODO is here!
 all_trips['tt_PRIVATE_AUTO'] = all_trips.apply(lambda row: row['distance_meters'] / driving_spd_mps, axis=1)
 all_trips['tt_CARPOOL'] = 0
-all_trips['tt_WALK'] = all_trips.apply(lambda row: row['distance_meters'] / walking_spd_mps, axis=1)
+all_trips['tt_WALKING'] = all_trips.apply(lambda row: row['distance_meters'] / walking_spd_mps, axis=1)
 all_trips['tt_PUBLIC_TRANSIT'] = 0
 all_trips['tt_ON_DEMAND_AUTO'] = 0
 all_trips['tt_SHARED_BIKE'] = 0
@@ -57,7 +57,7 @@ all_trips['tt_BIKING'] = 0
 # Calculate trip duration variabilities
 all_trips['dv_PRIVATE_AUTO'] = 1
 all_trips['dv_CARPOOL'] = 0
-all_trips['dv_WALK'] = 0
+all_trips['dv_WALKING'] = 0
 all_trips['dv_PUBLIC_TRANSIT'] = 0
 all_trips['dv_ON_DEMAND_AUTO'] = 0
 all_trips['dv_SHARED_BIKE'] = 0
@@ -66,7 +66,7 @@ all_trips['dv_BIKING'] = 0
 # Calculate trip costs
 all_trips['tc_PRIVATE_AUTO'] = 0
 all_trips['tc_CARPOOL'] = 0
-all_trips['tc_WALK'] = 0
+all_trips['tc_WALKING'] = 0
 all_trips['tc_PUBLIC_TRANSIT'] = 0
 all_trips['tc_ON_DEMAND_AUTO'] = 0
 all_trips['tc_SHARED_BIKE'] = 0
