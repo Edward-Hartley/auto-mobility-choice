@@ -45,7 +45,7 @@ alt_varying_variables = {
     'active_time': {WALKING: 'at_WALKING',
                     SHARED_BIKE: 'at_SHARED_BIKE',
                     BIKING: 'at_BIKING',
-                    PUBLIC_TRANSIT: 'active_time_PUBLIC_TRANSIT'},
+                    PUBLIC_TRANSIT: 'at_PUBLIC_TRANSIT'},
     'rain_cover': {PRIVATE_AUTO: 'rain_cover',
                    CARPOOL: 'rain_cover',
                    PUBLIC_TRANSIT: 'rain_cover',
