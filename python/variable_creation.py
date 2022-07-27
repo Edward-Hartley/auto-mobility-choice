@@ -39,48 +39,48 @@ all_trips['mode_choice_int'] = all_trips['mode'].map(reverse_modes_dict)
 
 # %%
 
+n = all_trips.shape[0]
+
 all_trips['commuting'] = all_trips.apply(lambda row: (row['previous_activity_type'] == 'WORK') | (row['travel_purpose'] == 'WORK'), axis=1)
-# When converting to long format only map rain_cover to appropriate modes
-all_trips['rain_cover'] = 1
 # Three highest traffic hours, could also add morning rush hour
 all_trips['rush_hour'] = all_trips.apply(lambda row: row['start_local_hour'] in [15, 16, 17], axis=1)
 
 # Calculate trip travel times, main TODO is here!
 all_trips['tt_PRIVATE_AUTO'] = all_trips.apply(lambda row: row['distance_meters'] / driving_spd_mps, axis=1)
-all_trips['tt_CARPOOL'] = 0
+all_trips['tt_CARPOOL'] = 0.00001*np.random.rand(n, 1)
 all_trips['tt_WALKING'] = all_trips.apply(lambda row: row['distance_meters'] / walking_spd_mps, axis=1)
-all_trips['tt_PUBLIC_TRANSIT'] = 0
-all_trips['tt_ON_DEMAND_AUTO'] = 0
-all_trips['tt_SHARED_BIKE'] = 0
-all_trips['tt_BIKING'] = 0
+all_trips['tt_PUBLIC_TRANSIT'] = 0.00001*np.random.rand(n, 1)
+all_trips['tt_ON_DEMAND_AUTO'] = 0.00001*np.random.rand(n, 1)
+all_trips['tt_SHARED_BIKE'] = 0.00001*np.random.rand(n, 1)
+all_trips['tt_BIKING'] = 0.00001*np.random.rand(n, 1)
 
 # Calculate trip duration variabilities
-all_trips['dv_PRIVATE_AUTO'] = 1
-all_trips['dv_CARPOOL'] = 0
-all_trips['dv_WALKING'] = 0
-all_trips['dv_PUBLIC_TRANSIT'] = 0
-all_trips['dv_ON_DEMAND_AUTO'] = 0
-all_trips['dv_SHARED_BIKE'] = 0
-all_trips['dv_BIKING'] = 0
+all_trips['dv_PRIVATE_AUTO'] = 1 + 0.00001*np.random.rand(n, 1)
+all_trips['dv_CARPOOL'] = 0.00001*np.random.rand(n, 1)
+all_trips['dv_WALKING'] = 0.00001*np.random.rand(n, 1)
+all_trips['dv_PUBLIC_TRANSIT'] = 0.00001*np.random.rand(n, 1)
+all_trips['dv_ON_DEMAND_AUTO'] = 0.00001*np.random.rand(n, 1)
+all_trips['dv_SHARED_BIKE'] = 0.00001*np.random.rand(n, 1)
+all_trips['dv_BIKING'] = 0.00001*np.random.rand(n, 1)
 
 # Calculate trip costs
-all_trips['tc_PRIVATE_AUTO'] = 0
-all_trips['tc_CARPOOL'] = 0
-all_trips['tc_WALKING'] = 0
-all_trips['tc_PUBLIC_TRANSIT'] = 0
-all_trips['tc_ON_DEMAND_AUTO'] = 0
-all_trips['tc_SHARED_BIKE'] = 0
-all_trips['tc_BIKING'] = 0
+all_trips['tc_PRIVATE_AUTO'] = 0.00001*np.random.rand(n, 1)
+all_trips['tc_CARPOOL'] = 0.00001*np.random.rand(n, 1)
+all_trips['tc_WALKING'] = 0.00001*np.random.rand(n, 1)
+all_trips['tc_PUBLIC_TRANSIT'] = 0.00001*np.random.rand(n, 1)
+all_trips['tc_ON_DEMAND_AUTO'] = 0.00001*np.random.rand(n, 1)
+all_trips['tc_SHARED_BIKE'] = 0.00001*np.random.rand(n, 1)
+all_trips['tc_BIKING'] = 0.00001*np.random.rand(n, 1)
 
 # Calculate waiting times
-all_trips['wt_PUBLIC_TRANSIT'] = 0
-all_trips['wt_ON_DEMAND_AUTO'] = 0
+all_trips['wt_PUBLIC_TRANSIT'] = 0.00001*np.random.rand(n, 1)
+all_trips['wt_ON_DEMAND_AUTO'] = 0.00001*np.random.rand(n, 1)
 
 # Calculate active times
-all_trips['at_WALKING'] = 0
-all_trips['at_PUBLIC_TRANSIT'] = 0
-all_trips['at_SHARED_BIKE'] = 0
-all_trips['at_BIKING'] = 0
+all_trips['at_WALKING'] = 0.00001*np.random.rand(n, 1)
+all_trips['at_PUBLIC_TRANSIT'] = 0.00001*np.random.rand(n, 1)
+all_trips['at_SHARED_BIKE'] = 0.00001*np.random.rand(n, 1)
+all_trips['at_BIKING'] = 0.00001*np.random.rand(n, 1)
 
 
 # %%
@@ -94,7 +94,12 @@ trips_variables = all_trips.drop(columns = [
     'origin_bgrp', 'origin_bgrp_lat', 'origin_bgrp_lng', 'destination_bgrp',
     'destination_bgrp_lat', 'destination_bgrp_lng',
     'distance_from_bb', 'distance_from_destination',
-    'hours_from_bb',
+    'hours_from_bb', 'origin_land_use_l1',
+    'origin_land_use_l2', 'destination_land_use_l1',
+    'destination_land_use_l2', 'origin_building_use_l1',
+    'origin_building_use_l2', 'destination_building_use_l1',
+    'destination_building_use_l2', 'vehicle_type', 'vehicle_fuel_type',
+    'vehicle_fuel_technology',
     ])
 trips_variables.set_index('activity_id', inplace=True, drop=False)
 
