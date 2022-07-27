@@ -66,7 +66,7 @@ all_trips['tc_BIKING'] = 0.00001*np.random.rand(n, 1)
 
 # Calculate waiting times
 all_trips['wt_PUBLIC_TRANSIT'] = 0.00001*np.random.rand(n, 1)
-all_trips['wt_ON_DEMAND_AUTO'] = 0.00001*np.random.rand(n, 1)
+all_trips['wt_ON_DEMAND_AUTO'] = 2.5 + np.random.rand(n, 1) # TODO: find better estimate for waiting time
 
 # Calculate active times
 all_trips['at_WALKING'] = 0.00001*np.random.rand(n, 1)
