@@ -173,5 +173,9 @@ nested.fit_mle(init_values, constrained_pos=[0])
 
 
 
+# %%
 
+nested.get_statsmodels_summary()
+# %%
+nested.print_summaries()
 # %%
