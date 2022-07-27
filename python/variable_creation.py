@@ -41,27 +41,19 @@ all_trips['mode_choice_int'] = all_trips['mode'].map(reverse_modes_dict)
 
 n = all_trips.shape[0]
 
-all_trips['commuting'] = all_trips.apply(lambda row: (row['previous_activity_type'] == 'WORK') | (row['travel_purpose'] == 'WORK'), axis=1)
+# In logit based model, commuting is implied by employed + rush hour
+# all_trips['commuting'] = all_trips.apply(lambda row: (row['previous_activity_type'] == 'WORK') | (row['travel_purpose'] == 'WORK'), axis=1)
 # Three highest traffic hours, could also add morning rush hour
 all_trips['rush_hour'] = all_trips.apply(lambda row: row['start_local_hour'] in [15, 16, 17], axis=1)
 
-# Calculate trip travel times, main TODO is here!
-all_trips['tt_PRIVATE_AUTO'] = all_trips.apply(lambda row: row['distance_meters'] / driving_spd_mps, axis=1)
-all_trips['tt_CARPOOL'] = 0.00001*np.random.rand(n, 1)
-all_trips['tt_WALKING'] = all_trips.apply(lambda row: row['distance_meters'] / walking_spd_mps, axis=1)
-all_trips['tt_PUBLIC_TRANSIT'] = 0.00001*np.random.rand(n, 1)
-all_trips['tt_ON_DEMAND_AUTO'] = 0.00001*np.random.rand(n, 1)
-all_trips['tt_SHARED_BIKE'] = 0.00001*np.random.rand(n, 1)
-all_trips['tt_BIKING'] = 0.00001*np.random.rand(n, 1)
-
-# Calculate trip duration variabilities
-all_trips['dv_PRIVATE_AUTO'] = 1 + 0.00001*np.random.rand(n, 1)
-all_trips['dv_CARPOOL'] = 0.00001*np.random.rand(n, 1)
-all_trips['dv_WALKING'] = 0.00001*np.random.rand(n, 1)
-all_trips['dv_PUBLIC_TRANSIT'] = 0.00001*np.random.rand(n, 1)
-all_trips['dv_ON_DEMAND_AUTO'] = 0.00001*np.random.rand(n, 1)
-all_trips['dv_SHARED_BIKE'] = 0.00001*np.random.rand(n, 1)
-all_trips['dv_BIKING'] = 0.00001*np.random.rand(n, 1)
+# Calculate trip vehicle times, main TODO is here!
+all_trips['vt_PRIVATE_AUTO'] = all_trips.apply(lambda row: row['distance_meters'] / driving_spd_mps, axis=1)
+all_trips['vt_CARPOOL'] = 0.00001*np.random.rand(n, 1)
+all_trips['vt_WALKING'] = all_trips.apply(lambda row: row['distance_meters'] / walking_spd_mps, axis=1)
+all_trips['vt_PUBLIC_TRANSIT'] = 0.00001*np.random.rand(n, 1)
+all_trips['vt_ON_DEMAND_AUTO'] = 0.00001*np.random.rand(n, 1)
+all_trips['vt_SHARED_BIKE'] = 0.00001*np.random.rand(n, 1)
+all_trips['vt_BIKING'] = 0.00001*np.random.rand(n, 1)
 
 # Calculate trip costs
 all_trips['tc_PRIVATE_AUTO'] = 0.00001*np.random.rand(n, 1)
