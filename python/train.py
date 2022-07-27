@@ -23,7 +23,7 @@ all_trips = all_trips.sample(frac = 0.01)
 individual_variables = [
     'income_per_capita', 'employed', 
     'age_youngest', 'age_oldest',
-    'commuting', 'rush_hour'
+    'rush_hour'
     ]
 
 def add_mode_suffixes(prefix):
@@ -39,9 +39,8 @@ def add_mode_suffixes(prefix):
 # the column name of the corresponding column that encodes that variable for
 # the given alternative.
 alt_varying_variables = {
-    'travel_time': add_mode_suffixes('tt'),
+    'vehicle_time': add_mode_suffixes('vt'),
     'travel_cost': add_mode_suffixes('tc'),
-    'duration_variability': add_mode_suffixes('dv'),
     'waiting_time': {PUBLIC_TRANSIT: 'wt_PUBLIC_TRANSIT',
                      ON_DEMAND_AUTO: 'wt_ON_DEMAND_AUTO'},
     'active_time': {WALKING: 'at_WALKING',
@@ -123,11 +122,8 @@ param_specification['commuting'] = [0, 1, 2, 3, 4, [5, 6]]
 param_names['commuting'] = ['Commuting Private Auto', 'Commuting Carpool', 'Commuting Walk', 'Commuting Public Transit', 'Commuting On-Demand Auto', 'Commuting Biking']
 
 # Specify the coefficients for the trip statistics variables
-param_specification['travel_time'] = [[0, 1, 2, 3, 4, 5, 6]]
-param_names['travel_time'] = ['Travel Time']
-
-param_specification['duration_variability'] = [[0, 1, 2, 3, 4, 5, 6]]
-param_names['duration_variability'] = ['Duration Variability']
+param_specification['vehicle_time'] = [[0, 1, 2, 3, 4, 5, 6]]
+param_names['vehicle_time'] = ['Travel Time']
 
 param_specification['travel_cost'] = [[0, 1, 2, 3, 4, 5, 6]]
 param_names['travel_cost'] = ['Cost']
