@@ -56,10 +56,11 @@ bgrps = [{'bgrp_id': bgrp['origin_bgrp'], 'lat': bgrp['origin_bgrp_lat'], 'lng':
 # Calculate travel costs, TODO: store this and simply load it here
 travel_costs = travel_costs_dict(bgrps)
 #%%
+# Add travel costs to table
 
 n = all_trips.shape[0]
 
-# Calculate trip vehicle times, main TODO is here!
+# Calculate trip vehicle times
 all_trips['vt_PRIVATE_AUTO'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['drive'][row['destination_bgrp']]['vehicle_time'], axis=1)
 all_trips['vt_CARPOOL'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['drive'][row['destination_bgrp']]['vehicle_time'], axis=1)
 all_trips['vt_WALKING'] = 0
@@ -69,11 +70,11 @@ all_trips['vt_SHARED_BIKE'] = 0
 all_trips['vt_BIKING'] = 0
 
 # Calculate trip costs
-all_trips['tc_PRIVATE_AUTO'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['drive'][row['destination_bgrp']]['distance'] * car_annual_cost_per_mile, axis=1)
+all_trips['tc_PRIVATE_AUTO'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['drive'][row['destination_bgrp']]['distance'] * car_annual_cost_per_mile / 1600, axis=1)
 all_trips['tc_CARPOOL'] = all_trips['tc_PRIVATE_AUTO'] / 2
 all_trips['tc_WALKING'] = 0
 all_trips['tc_PUBLIC_TRANSIT'] = transit_cost
-all_trips['tc_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: shared_auto_base_fare + travel_costs[row['origin_bgrp']]['drive'][row['destination_bgrp']]['distance'] * shared_auto_per_mile + row['vt_ON_DEMAND_AUTO'] * shared_auto_per_minute, axis=1)
+all_trips['tc_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: shared_auto_base_fare + travel_costs[row['origin_bgrp']]['drive'][row['destination_bgrp']]['distance'] * shared_auto_per_mile / 1600 + row['vt_ON_DEMAND_AUTO'] * shared_auto_per_minute, axis=1)
 all_trips['tc_SHARED_BIKE'] = shared_bike_cost
 all_trips['tc_BIKING'] = bike_per_year / (221 * 2) # commuting twice per working day
 
@@ -84,7 +85,7 @@ all_trips['wt_ON_DEMAND_AUTO'] = 2.5 + np.random.rand(n, 1) # TODO: find better 
 # Calculate active times
 all_trips['at_WALKING'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['walk'][row['destination_bgrp']]['active_time'], axis=1)
 all_trips['at_PUBLIC_TRANSIT'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['transit'][row['destination_bgrp']]['active_time'], axis=1)
-all_trips['at_SHARED_BIKE'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['bike'][row['destination_bgrp']]['active_time'], axis=1) + 2.5 + np.random.rand(n, 1) # TODO: find better estimate for active time
+all_trips['at_SHARED_BIKE'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['bike'][row['destination_bgrp']]['active_time'], axis=1) + 2.5 # TODO: find better estimate for active time
 all_trips['at_BIKING'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['bike'][row['destination_bgrp']]['active_time'], axis=1)
 
 
