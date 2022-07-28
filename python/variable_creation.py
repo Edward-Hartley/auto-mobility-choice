@@ -28,9 +28,18 @@ people_variables.set_index('person_id', inplace=True, drop=True)
 
 # %%
 
+# Utility dictionaries and add integer encoding of mode choice
 modes = ['PRIVATE_AUTO', 'CARPOOL', 'WALKING', 'PUBLIC_TRANSIT', 'ON_DEMAND_AUTO', 'SHARED_BIKE', 'BIKING']
 modes_dict = {i: mode for i, mode in enumerate(modes)}
 reverse_modes_dict = {mode: i for i, mode in enumerate(modes)}
+all_trips['mode_choice_int'] = all_trips['mode'].map(reverse_modes_dict)
+
+# In logit based model, commuting is implied by employed + rush hour
+# all_trips['commuting'] = all_trips.apply(lambda row: (row['previous_activity_type'] == 'WORK') | (row['travel_purpose'] == 'WORK'), axis=1)
+# Three highest traffic hours, could also add morning rush hour
+all_trips['rush_hour'] = all_trips.apply(lambda row: row['start_local_hour'] in [15, 16, 17], axis=1)
+
+# Sources: uber website, AAA, bluebikes site, MoCho
 car_annual_cost_per_mile = 0.58
 shared_auto_per_mile = 2.8
 shared_auto_per_minute = 0.48
@@ -39,19 +48,12 @@ transit_cost = 2.25
 bike_per_year = 220
 shared_bike_cost = 3.25
 
-all_trips['mode_choice_int'] = all_trips['mode'].map(reverse_modes_dict)
-
-# %%
-
-# In logit based model, commuting is implied by employed + rush hour
-# all_trips['commuting'] = all_trips.apply(lambda row: (row['previous_activity_type'] == 'WORK') | (row['travel_purpose'] == 'WORK'), axis=1)
-# Three highest traffic hours, could also add morning rush hour
-all_trips['rush_hour'] = all_trips.apply(lambda row: row['start_local_hour'] in [15, 16, 17], axis=1)
-
+# Format blockgroups to the required input for the travel costs function
 all_trips = all_trips[all_trips.apply(lambda row: row['destination_bgrp'] in (all_trips.origin_bgrp.unique()), axis=1)]
 blockgroups = all_trips[['origin_bgrp', 'origin_bgrp_lat', 'origin_bgrp_lng']].drop_duplicates()
 bgrps = [{'bgrp_id': bgrp['origin_bgrp'], 'lat': bgrp['origin_bgrp_lat'], 'lng': bgrp['origin_bgrp_lng']} for _, bgrp in blockgroups.iterrows()]
 
+# Calculate travel costs, TODO: store this and simply load it here
 travel_costs = travel_costs_dict(bgrps)
 #%%
 
@@ -108,9 +110,11 @@ trips_variables.set_index('activity_id', inplace=True, drop=False)
 
 # %%
 
+# Add demographic information
 all_variables = trips_variables.join(people_variables, on='person_id')
 variables_no_na = all_variables.dropna(axis=0)
 
+# Account for 'missing' people from people table
 dropped_ratios = variables_no_na['mode'].value_counts()/all_variables['mode'].value_counts()
 min_ratio = dropped_ratios.min()
 
@@ -118,6 +122,7 @@ variables_no_na = variables_no_na[
     variables_no_na.apply(lambda row: min_ratio/dropped_ratios[row['mode']] > random.random(), axis=1)
     ]
 
+# Store the augmented data!
 variables_no_na.to_csv('data/full_sample_run/variables_wide.csv')
 
 # %%

@@ -133,19 +133,24 @@ def travel_costs_dict(bgrps):
         for mode in ['drive', 'walk', 'bike', 'transit']:
             travel_costs[bgrp_id][mode] = {}
             if mode == 'drive':
+                # Lists to find paths from starting blockgroup to all others
                 nodes_a = [bgrp_nodes_driving[bgrp_id]] * len(bgrp_nodes_driving)
                 nodes_b = bgrp_nodes_driving.values
+                # Calculate paths and store the vehicle times
                 vehicle_times = pd.Series(driving_net.shortest_path_lengths(nodes_a, nodes_b, 'vehicle_time'), bgrp_nodes_driving.keys())
+                # TODO: replace this with path sum over the shortest path in terms of vehicle time
                 distance = pd.Series(driving_net.shortest_path_lengths(nodes_a, nodes_b, 'distance'), bgrp_nodes_driving.keys())
+                # Remove outliers (for any unreachable nodes the time is set to a very high value)
                 next_max = vehicle_times[vehicle_times != vehicle_times.max()].max()
                 if next_max > highest_vehicle:
                     highest_vehicle = next_max
                 elif next_max == 0:
                     next_max = highest_vehicle
+                # Store the vehicle times and set the other costs to 0
                 vehicle_times = vehicle_times.apply(lambda x: next_max if x == vehicle_times.max() else x)
                 active_times = pd.Series([0] * len(bgrp_nodes_driving), bgrp_nodes_driving.keys())
                 waiting_times = pd.Series([0] * len(bgrp_nodes_driving), bgrp_nodes_driving.keys())
-
+            # Repeat above for walking and biking
             elif mode == 'walk':
                 nodes_a = [bgrp_nodes_walking_biking[bgrp_id]] * len(bgrp_nodes_walking_biking)
                 nodes_b = bgrp_nodes_walking_biking.values
@@ -174,18 +179,17 @@ def travel_costs_dict(bgrps):
                 waiting_times = pd.Series([0] * len(bgrp_nodes_driving), bgrp_nodes_driving.keys())
 
             elif mode == 'transit':
+                # Lists to find paths from starting blockgroup to all others
                 nodes_a = [bgrp_nodes_transit[bgrp_id]] * len(bgrp_nodes_transit)
                 nodes_b = bgrp_nodes_transit.values
+                # Find shortest paths by total time
                 shortest_paths = pd.Series(transit_ped_net.shortest_paths(nodes_a, nodes_b, 'weight'), bgrp_nodes_transit.keys())
-                
+                # Calculate the separate times for each type of time spent by summing each edge
                 edges = transit_ped_net.edges_df
                 vehicle_times = shortest_paths.apply(lambda path: sum_path_by_column(path, edges, 'vehicle_time'))
                 active_times = shortest_paths.apply(lambda path: sum_path_by_column(path, edges, 'active_time'))
                 waiting_times = shortest_paths.apply(lambda path: sum_path_by_column(path, edges, 'waiting_time'))
-
-                # vehicle_times = pd.Series(transit_ped_net.shortest_path_lengths(nodes_a, nodes_b, 'vehicle_time'), bgrp_nodes_transit.keys())
-                # active_times = pd.Series(transit_ped_net.shortest_path_lengths(nodes_a, nodes_b, 'active_time'), bgrp_nodes_transit.keys())
-                # waiting_times = pd.Series(transit_ped_net.shortest_path_lengths(nodes_a, nodes_b, 'waiting_time'), bgrp_nodes_transit.keys())
+                # Remove outliers (for any unreachable nodes the time is set to a very high value)
                 next_max = vehicle_times[vehicle_times != vehicle_times.max()].max()
                 if next_max > highest_vehicle:
                     highest_vehicle = next_max
@@ -204,13 +208,7 @@ def travel_costs_dict(bgrps):
                 elif next_max == 0:
                     next_max = highest_waiting
                 waiting_times = waiting_times.apply(lambda x: next_max if x == waiting_times.max() else x)
-                if (switch):
-                    switch -= 1
-                    if switch < 2:
-                        print(vehicle_times.max())
-                        print(active_times.max())
-                        print(waiting_times.head())
-            
+            # Fill in travel costs dictionary
             for bgrp2 in bgrps:
                 bgrp2_id = bgrp2['bgrp_id']
                 travel_costs[bgrp_id][mode][bgrp2_id] = {}

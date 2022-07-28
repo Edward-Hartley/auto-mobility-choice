@@ -5,8 +5,8 @@
 import osmnet
 
 # Transit graph = pedestrian + transit
-# Walking graph = predestrian
-# Biking graph = driving graph = driving
+# Biking graph  = Walking graph = predestrian
+# Driving graph = driving
 
 import matplotlib
 matplotlib.use('agg')  # allows notebook to be tested in Travis
@@ -24,11 +24,11 @@ from urbanaccess.gtfs.gtfsfeeds_dataframe import gtfsfeeds_dfs
 from urbanaccess.network import ua_network, load_network
 
 # %%
-# Create a pedestrian network
+# Create a driving network
 def store_driving_network(bbox):
-    # Create walking network
+    # Download network
     nodes, edges = osmnet.load.network_from_bbox(bbox=bbox, network_type='drive')
-
+    # Create a network object
     ua.osm.network.create_osm_net(osm_edges=edges,
                                 osm_nodes=nodes,
                                 travel_speed_mph=3)
