@@ -8,6 +8,7 @@ from bluebike_station_dictionary import get_stations_distances_dict
 bb_path = '/home/dwarddd/MIT/auto-mobility-choice/python/data/full_sample_run/202104-bluebikes-tripdata.csv'
 replica_path = '/home/dwarddd/MIT/auto-mobility-choice/python/data/full_sample_run/trips_thursday_mar2021-may2021_northeast_28filters_created07-26-2022.csv'
 
+# Set for new data
 relevant_dates = ['2021-04-01', '2021-04-08', '2021-04-15', '2021-04-22', '2021-04-29']
 
 #%%
