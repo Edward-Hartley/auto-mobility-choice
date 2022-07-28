@@ -118,8 +118,8 @@ param_names['employed'] = ['Employed Private Auto', 'Employed Carpool', 'Employe
 param_specification['rush_hour'] = [0, 1, 2, 3, 4, [5, 6]]
 param_names['rush_hour'] = ['Rush Hour Private Auto', 'Rush Hour Carpool', 'Rush Hour Walk', 'Rush Hour Public Transit', 'Rush Hour On-Demand Auto', 'Rush Hour Biking']
 
-param_specification['commuting'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['commuting'] = ['Commuting Private Auto', 'Commuting Carpool', 'Commuting Walk', 'Commuting Public Transit', 'Commuting On-Demand Auto', 'Commuting Biking']
+# param_specification['commuting'] = [0, 1, 2, 3, 4, [5, 6]]
+# param_names['commuting'] = ['Commuting Private Auto', 'Commuting Carpool', 'Commuting Walk', 'Commuting Public Transit', 'Commuting On-Demand Auto', 'Commuting Biking']
 
 # Specify the coefficients for the trip statistics variables
 param_specification['vehicle_time'] = [[0, 1, 2, 3, 4, 5, 6]]
