@@ -7,6 +7,7 @@ import pandas as pd
 
 import pandana
 import urbanaccess as ua
+import pickle
 
 pd.options.display.float_format = '{:.4f}'.format
 
@@ -106,7 +107,7 @@ def sum_path_by_column(path, edges, column):
 #   lng: float
 # Returns:
 # (Bgrp, (drive | walk | bike | transit), bgrp) -> (wait_time, vehicle_time, active_time)
-def travel_costs_dict(bgrps):
+def gen_travel_costs_dict(bgrps):
     driving_net = gen_driving_net()
     transit_ped_net, walking_biking_net = transit_walking_biking_nets()
     #%%
@@ -217,5 +218,19 @@ def travel_costs_dict(bgrps):
                 travel_costs[bgrp_id][mode][bgrp2_id]['active_time'] = active_times[bgrp2_id]
                 if mode == 'drive':
                     travel_costs[bgrp_id][mode][bgrp2_id]['distance'] = distance[bgrp2_id]
+    with open('./data/travel_costs.p', 'wb') as f:
+        # protocol increases speed at loss of readability
+        pickle.dump(travel_costs, f, protocol=pickle.HIGHEST_PROTOCOL)
     return travel_costs
 # %%
+
+def travel_costs_dict(bgrps):
+    """
+    Returns a dictionary of travel costs between blockgroups.
+    """
+    try :
+        with open('./data/travel_costs.p', 'rb') as f:
+            travel_costs = pickle.load(f)
+    except FileNotFoundError:
+        travel_costs = gen_travel_costs_dict(bgrps)
+    return travel_costs
