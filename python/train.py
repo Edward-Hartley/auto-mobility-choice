@@ -17,7 +17,7 @@ SHARED_BIKE = 5
 BIKING = 6
 
 all_trips = pd.read_csv('data/full_sample_run/variables_wide.csv')
-all_trips = all_trips.sample(frac = 0.01)
+all_trips = all_trips.sample(frac = 0.02)
 
 # Create the list of individual specific variables
 individual_variables = [
@@ -172,6 +172,8 @@ nested.fit_mle(init_values, constrained_pos=[0])
 # %%
 
 nested.get_statsmodels_summary()
+# %%
+all_trips['mode'].value_counts()
 # %%
 nested.print_summaries()
 # %%
