@@ -13,7 +13,7 @@ all_people = pd.read_csv('./data/full_sample_run/people_filtered.csv')
 
 #%%
 
-all_people['income_per_capita'] = all_people.apply(lambda row: row['household_income'] / row['household_size'], axis=1)
+all_people['income_per_capita'] = all_people.apply(lambda row: np.log(row['household_income'] / row['household_size']), axis=1)
 all_people['car_available'] = all_people.apply(lambda row: row['vehicles'] != 'zero', axis=1)
 all_people['noncar_available'] = 1
 all_people['employed'] = all_people.apply(lambda row: row['employment'] == 'employed', axis=1)
@@ -53,7 +53,7 @@ all_trips = all_trips[all_trips.apply(lambda row: row['destination_bgrp'] in (al
 blockgroups = all_trips[['origin_bgrp', 'origin_bgrp_lat', 'origin_bgrp_lng']].drop_duplicates()
 bgrps = [{'bgrp_id': bgrp['origin_bgrp'], 'lat': bgrp['origin_bgrp_lat'], 'lng': bgrp['origin_bgrp_lng']} for _, bgrp in blockgroups.iterrows()]
 
-# Calculate travel costs, TODO: store this and simply load it here
+# Retrieve travel costs
 travel_costs = travel_costs_dict(bgrps)
 #%%
 # Add travel costs to table
