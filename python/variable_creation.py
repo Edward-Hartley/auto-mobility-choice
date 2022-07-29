@@ -13,7 +13,7 @@ all_people = pd.read_csv('./data/full_sample_run/people_filtered.csv')
 
 #%%
 
-all_people['income_per_capita'] = all_people.apply(lambda row: np.log(row['household_income'] / row['household_size']), axis=1)
+all_people['income_per_capita'] = all_people.apply(lambda row: np.log(row['household_income'] / row['household_size'] if row['household_income'] / row['household_size'] > 1 else 1), axis=1)
 all_people['car_available'] = all_people.apply(lambda row: row['vehicles'] != 'zero', axis=1)
 all_people['noncar_available'] = 1
 all_people['employed'] = all_people.apply(lambda row: row['employment'] == 'employed', axis=1)
