@@ -17,7 +17,11 @@ SHARED_BIKE = 5
 BIKING = 6
 
 all_trips = pd.read_csv('data/full_sample_run/variables_wide.csv')
-all_trips = all_trips.sample(frac = 0.02)
+# print(all_trips['mode'].value_counts() / len(all_trips))
+all_trips = all_trips.sample(frac = 0.05, random_state=42)
+# print(all_trips['mode'].value_counts() / len(all_trips))
+
+all_trips['income_per_capita'] = all_trips['income_per_capita']/1000
 
 # Create the list of individual specific variables
 individual_variables = [
@@ -98,32 +102,32 @@ nest_membership["Biking"] = [5, 6]
 param_specification = OrderedDict()
 param_names = OrderedDict()
 
-param_specification['intercept'] = [1, 2, 3, 4, 5, 6]
-param_names['intercept'] = ['ASC Carpool', 'ASC Walk', 'ASC Public Transit', 'ASC On-Demand Auto', 'ASC Shared Bike', 'ASC Biking']
+param_specification['intercept'] = [1, 2, 3, 4, [5, 6]]
+param_names['intercept'] = ['ASC Carpool', 'ASC Walk', 'ASC Public Transit', 'ASC On-Demand Auto', 'ASC Biking']
 
 # Specify the coefficients for the basic variables
 # Biking alternatives have the same coefficients for each population descriptor
-param_specification['age_youngest'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['age_youngest'] = ['Youngest Private Auto', 'Youngest Carpool', 'Youngest Walk', 'Youngest Public Transit', 'Youngest On-Demand Auto', 'Youngest Biking']
+# param_specification['age_youngest'] = [1, 2, 3, 4, [5, 6]]
+# param_names['age_youngest'] = ['Youngest Carpool', 'Youngest Walk', 'Youngest Public Transit', 'Youngest On-Demand Auto', 'Youngest Biking']
 
-param_specification['age_oldest'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['age_oldest'] = ['Oldest Private Auto', 'Oldest Carpool', 'Oldest Walk', 'Oldest Public Transit', 'Oldest On-Demand Auto', 'Oldest Biking']
+# param_specification['age_oldest'] = [1, 2, 3, 4, [5, 6]]
+# param_names['age_oldest'] = ['Oldest Carpool', 'Oldest Walk', 'Oldest Public Transit', 'Oldest On-Demand Auto', 'Oldest Biking']
 
-param_specification['income_per_capita'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['income_per_capita'] = ['Income Private Auto', 'Income Carpool', 'Income Walk', 'Income Public Transit', 'Income On-Demand Auto', 'Income Biking']
+param_specification['income_per_capita'] = [1, 2, 3, 4, 5, 6]
+param_names['income_per_capita'] = ['Income Carpool', 'Income Walk', 'Income Public Transit', 'Income On-Demand Auto','Income Shared Bike',  'Income Biking']
 
-param_specification['employed'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['employed'] = ['Employed Private Auto', 'Employed Carpool', 'Employed Walk', 'Employed Public Transit', 'Employed On-Demand Auto', 'Employed Biking']
+# param_specification['employed'] = [1, 2, 3, 4, [5, 6]]
+# param_names['employed'] = ['Employed Carpool', 'Employed Walk', 'Employed Public Transit', 'Employed On-Demand Auto', 'Employed Biking']
 
-param_specification['rush_hour'] = [0, 1, 2, 3, 4, [5, 6]]
-param_names['rush_hour'] = ['Rush Hour Private Auto', 'Rush Hour Carpool', 'Rush Hour Walk', 'Rush Hour Public Transit', 'Rush Hour On-Demand Auto', 'Rush Hour Biking']
+# param_specification['rush_hour'] = [1, 2, 3, 4, [5, 6]]
+# param_names['rush_hour'] = ['Rush Hour Carpool', 'Rush Hour Walk', 'Rush Hour Public Transit', 'Rush Hour On-Demand Auto', 'Rush Hour Biking']
 
-# param_specification['commuting'] = [0, 1, 2, 3, 4, [5, 6]]
-# param_names['commuting'] = ['Commuting Private Auto', 'Commuting Carpool', 'Commuting Walk', 'Commuting Public Transit', 'Commuting On-Demand Auto', 'Commuting Biking']
+# param_specification['commuting'] = [1, 2, 3, 4, [5, 6]]
+# param_names['commuting'] = ['Commuting Carpool', 'Commuting Walk', 'Commuting Public Transit', 'Commuting On-Demand Auto', 'Commuting Biking']
 
 # Specify the coefficients for the trip statistics variables
 param_specification['vehicle_time'] = [[0, 1, 2, 3, 4, 5, 6]]
-param_names['vehicle_time'] = ['Travel Time']
+param_names['vehicle_time'] = ['Vehicle Time']
 
 param_specification['travel_cost'] = [[0, 1, 2, 3, 4, 5, 6]]
 param_names['travel_cost'] = ['Cost']
