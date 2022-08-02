@@ -1,0 +1,48 @@
+
+
+Number of Parameters                                                     17
+Number of Observations                                                 5254
+Null Log-Likelihood                                           -10965.380395
+Fitted Log-Likelihood                                          -5262.432388
+Rho-Squared                                                        0.520087
+Rho-Bar-Squared                                                    0.518536
+Estimation Message        Desired error not necessarily achieved due to ...
+dtype: object
+==============================
+                       parameters    std_err    t_stats       p_values  \
+Non-biking              40.000000        NaN        NaN            NaN   
+Biking                  -2.837500   0.253918 -11.174873   5.412768e-29   
+ASC Carpool             -2.010427   0.086158 -23.334254  1.991654e-120   
+ASC Walk                 1.397811   0.055307  25.273771  6.206752e-141   
+ASC Public Transit      -3.695874   0.250437 -14.757729   2.743654e-49   
+ASC On-Demand Auto      -4.562004   0.318935 -14.303853   2.070223e-46   
+ASC Biking              -2.325237   0.127155 -18.286705   1.056090e-74   
+Income Carpool          18.556285   8.678737   2.138132   3.250604e-02   
+Income Walk            -23.703359   4.810585  -4.927334   8.335934e-07   
+Income Public Transit   -4.915261  24.990766  -0.196683   8.440756e-01   
+Income On-Demand Auto   31.283574  23.971240   1.305046   1.918771e-01   
+Income Shared Bike      25.394964  11.856223   2.141910   3.220071e-02   
+Income Biking           23.828078  11.945443   1.994742   4.607102e-02   
+Travel Time              0.052552   0.006309   8.329636   8.109102e-17   
+Cost                    -0.000178   0.000045  -3.960324   7.484821e-05   
+Waiting Time             0.282096   0.071834   3.927044   8.599630e-05   
+Active Time             -0.077424   0.006110 -12.672661   8.382187e-37   
+
+                       robust_std_err  robust_t_stats  robust_p_values  
+Non-biking                        NaN             NaN              NaN  
+Biking                            NaN             NaN              NaN  
+ASC Carpool                       NaN             NaN              NaN  
+ASC Walk                          NaN             NaN              NaN  
+ASC Public Transit                NaN             NaN              NaN  
+ASC On-Demand Auto                NaN             NaN              NaN  
+ASC Biking                        NaN             NaN              NaN  
+Income Carpool                    NaN             NaN              NaN  
+Income Walk                       NaN             NaN              NaN  
+Income Public Transit             NaN             NaN              NaN  
+Income On-Demand Auto             NaN             NaN              NaN  
+Income Shared Bike                NaN             NaN              NaN  
+Income Biking                     NaN             NaN              NaN  
+Travel Time                       NaN             NaN              NaN  
+Cost                              NaN             NaN              NaN  
+Waiting Time                      NaN             NaN              NaN  
+Active Time                       NaN             NaN              NaN  

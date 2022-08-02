@@ -7,7 +7,7 @@ import pandas as pd
 
 import pandana
 import urbanaccess as ua
-import pickle
+import json
 
 pd.options.display.float_format = '{:.4f}'.format
 
@@ -218,9 +218,8 @@ def gen_travel_costs_dict(bgrps):
                 travel_costs[bgrp_id][mode][bgrp2_id]['active_time'] = active_times[bgrp2_id]
                 if mode == 'drive':
                     travel_costs[bgrp_id][mode][bgrp2_id]['distance'] = distance[bgrp2_id]
-    with open('./data/travel_costs.p', 'wb') as f:
-        # protocol increases speed at loss of readability
-        pickle.dump(travel_costs, f, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('./data/travel_costs.json', 'w') as f:
+        json.dump(travel_costs, f) # save travel costs to file
     return travel_costs
 # %%
 
@@ -229,8 +228,8 @@ def travel_costs_dict(bgrps):
     Returns a dictionary of travel costs between blockgroups.
     """
     try :
-        with open('./data/travel_costs.p', 'rb') as f:
-            travel_costs = pickle.load(f)
+        with open('./data/travel_costs.json', 'r') as f:
+            travel_costs = json.load(f)
     except FileNotFoundError:
         travel_costs = gen_travel_costs_dict(bgrps)
     return travel_costs

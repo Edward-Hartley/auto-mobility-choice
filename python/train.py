@@ -113,14 +113,14 @@ param_names['intercept'] = ['ASC Carpool', 'ASC Walk', 'ASC Public Transit', 'AS
 # param_specification['age_oldest'] = [1, 2, 3, 4, [5, 6]]
 # param_names['age_oldest'] = ['Oldest Carpool', 'Oldest Walk', 'Oldest Public Transit', 'Oldest On-Demand Auto', 'Oldest Biking']
 
-param_specification['income_per_capita'] = [1, 2, 3, 4, 5, 6]
-param_names['income_per_capita'] = ['Income Carpool', 'Income Walk', 'Income Public Transit', 'Income On-Demand Auto','Income Shared Bike',  'Income Biking']
+param_specification['income_per_capita'] = [2, 4, 5, 6]
+param_names['income_per_capita'] = ['Income Walk', 'Income On-Demand Auto', 'Income Shared Biking', 'Income Biking']
 
 # param_specification['employed'] = [1, 2, 3, 4, [5, 6]]
 # param_names['employed'] = ['Employed Carpool', 'Employed Walk', 'Employed Public Transit', 'Employed On-Demand Auto', 'Employed Biking']
 
-# param_specification['rush_hour'] = [1, 2, 3, 4, [5, 6]]
-# param_names['rush_hour'] = ['Rush Hour Carpool', 'Rush Hour Walk', 'Rush Hour Public Transit', 'Rush Hour On-Demand Auto', 'Rush Hour Biking']
+param_specification['rush_hour'] = [1, 2, 3, 4, 5, 6]
+param_names['rush_hour'] = ['Rush Hour Carpool', 'Rush Hour Walk', 'Rush Hour Public Transit', 'Rush Hour On-Demand Auto', 'Rush Hour Shared Biking', 'Rush Hour Biking']
 
 # param_specification['commuting'] = [1, 2, 3, 4, [5, 6]]
 # param_names['commuting'] = ['Commuting Carpool', 'Commuting Walk', 'Commuting Public Transit', 'Commuting On-Demand Auto', 'Commuting Biking']
