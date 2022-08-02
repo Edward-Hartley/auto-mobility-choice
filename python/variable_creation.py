@@ -48,8 +48,9 @@ transit_cost = 2.25
 bike_per_year = 220
 shared_bike_cost = 3.25
 
-# Format blockgroups to the required input for the travel costs function
+# Remove trips finishing outside of the study area
 all_trips = all_trips[all_trips.apply(lambda row: row['destination_bgrp'] in (all_trips.origin_bgrp.unique()), axis=1)]
+# Format blockgroups to the required input for the travel costs function
 blockgroups = all_trips[['origin_bgrp', 'origin_bgrp_lat', 'origin_bgrp_lng']].drop_duplicates()
 bgrps = [{'bgrp_id': bgrp['origin_bgrp'], 'lat': bgrp['origin_bgrp_lat'], 'lng': bgrp['origin_bgrp_lng']} for _, bgrp in blockgroups.iterrows()]
 
@@ -80,6 +81,7 @@ all_trips['tc_BIKING'] = bike_per_year / (221 * 2) # commuting twice per working
 
 # Calculate waiting times
 all_trips['wt_PUBLIC_TRANSIT'] = all_trips.apply(lambda row: travel_costs[row['origin_bgrp']]['transit'][row['destination_bgrp']]['waiting_time'], axis=1)
+all_trips['wt_CARPOOL'] = 1 + np.random.rand(n, 1)
 all_trips['wt_ON_DEMAND_AUTO'] = 2.5 + np.random.rand(n, 1) # TODO: find better estimate for waiting time
 
 # Calculate active times
