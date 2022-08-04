@@ -48,7 +48,8 @@ def store_driving_network(bbox):
 
 # bbox for Blockgroups selected in sample - recalculate for new sample!
 # make sure to change in transit network too
-bbox = (-71.13, 42.345, -71.04, 42.394)
+# bbox = (-71.13, 42.345, -71.04, 42.394)
+bbox = (-73.3493, 41.2566, -68.679, 45.0668)
 
 # Order is important here - the driving osm data overrides the walking data used in the transit network
 store_driving_network(bbox)

@@ -98,7 +98,9 @@ def store_transit_walking_network(bbox):
 # bbox for Blockgroups selected in sample - recalculate for new sample!
 # make sure to change in driving network too
 # enlarged to slightly beyond blockgroup boundaries to avoid isolated nodes
-bbox = (-71.13, 42.345, -71.04, 42.394)
+# bbox = (-71.13, 42.345, -71.04, 42.394)
+# Bbox represents boston msa
+bbox = (-71.79, 41.99, -70.67, 43.2566)
 
 # These may appear functional but they are not - the ua_network is global
 store_transit_walking_network(bbox)
