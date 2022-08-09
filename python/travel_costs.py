@@ -109,160 +109,160 @@ replica_trips = pd.read_csv(replica_path)
 #   lng: float
 # Returns:
 # (Bgrp, (drive | walk | bike | transit), bgrp) -> (wait_time, vehicle_time, active_time)
-# def gen_travel_costs_dict(bgrps, ods):
-driving_net = gen_driving_net()
-#%%
-transit_ped_net, walking_biking_net = transit_walking_biking_nets()
-#%%
+def gen_travel_costs_dict(bgrps, ods):
+    driving_net = gen_driving_net()
+    #%%
+    transit_ped_net, walking_biking_net = transit_walking_biking_nets()
+    #%%
 
-# Change in line with transit_net and driving_net.py
-bbox = (-71.79, 41.99, -70.67, 43.2566)
+    # Change in line with transit_net and driving_net.py
+    bbox = (-71.79, 41.99, -70.67, 43.2566)
 
-# Remove trips finishing outside of the study area
-all_trips = replica_trips[replica_trips.apply(lambda row: 
-    (row['destination_bgrp_lat'] < bbox[3]) &  
-    (row['destination_bgrp_lat'] > bbox[1]) &
-    (row['destination_bgrp_lng'] < bbox[2]) &
-    (row['destination_bgrp_lng'] > bbox[0]), axis=1)]
-# Format blockgroups to the required input for the travel costs function
-blockgroups = all_trips[['destination_bgrp', 'destination_bgrp_lat', 'destination_bgrp_lng']].drop_duplicates()
-bgrps = [{'bgrp_id': bgrp['destination_bgrp'], 'lat': bgrp['destination_bgrp_lat'], 'lng': bgrp['destination_bgrp_lng']} for _, bgrp in blockgroups.iterrows()]
+    # Remove trips finishing outside of the study area
+    all_trips = replica_trips[replica_trips.apply(lambda row: 
+        (row['destination_bgrp_lat'] < bbox[3]) &  
+        (row['destination_bgrp_lat'] > bbox[1]) &
+        (row['destination_bgrp_lng'] < bbox[2]) &
+        (row['destination_bgrp_lng'] > bbox[0]), axis=1)]
+    # Format blockgroups to the required input for the travel costs function
+    blockgroups = all_trips[['destination_bgrp', 'destination_bgrp_lat', 'destination_bgrp_lng']].drop_duplicates()
+    bgrps = [{'bgrp_id': bgrp['destination_bgrp'], 'lat': bgrp['destination_bgrp_lat'], 'lng': bgrp['destination_bgrp_lng']} for _, bgrp in blockgroups.iterrows()]
 
-ods_df = all_trips[['origin_bgrp', 'destination_bgrp']].drop_duplicates()
-ods = ods_df.groupby('origin_bgrp').apply(lambda x: list(x['destination_bgrp'])).to_dict()
+    ods_df = all_trips[['origin_bgrp', 'destination_bgrp']].drop_duplicates()
+    ods = ods_df.groupby('origin_bgrp').apply(lambda x: list(x['destination_bgrp'])).to_dict()
 
-# We have list of Origin, Destination
-# and id -> lat lng dict
-# we want oring, destination -> distance
-# we make list 
+    # We have list of Origin, Destination
+    # and id -> lat lng dict
+    # we want oring, destination -> distance
+    # we make list 
 
-# !!! x=longitude, y=latitude
-bgrp_xs = pd.Series([bgrp['lng'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
-bgrp_ys = pd.Series([bgrp['lat'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
-# bgrp_nodes_driving = driving_net.get_node_ids(bgrp_xs, bgrp_ys)
-bgrp_nodes_transit = transit_ped_net.get_node_ids(bgrp_xs, bgrp_ys)
-bgrp_nodes_walking_biking = walking_biking_net.get_node_ids(bgrp_xs, bgrp_ys)
-#%%
-edges = transit_ped_net.edges_df[['from', 'to', 'vehicle_time', 'active_time', 'waiting_time']]
-edges['fromto'] = edges['from'].astype(str) + '_' + edges['to'].astype(str)
-edges.drop_duplicates(inplace=True)
-edges.dropna(inplace=True)
-edges = edges.groupby('fromto').mean()
-edges.drop(columns=['from', 'to'], axis=1, inplace=True)
-edges = edges.to_dict(orient='index')
+    # !!! x=longitude, y=latitude
+    bgrp_xs = pd.Series([bgrp['lng'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
+    bgrp_ys = pd.Series([bgrp['lat'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
+    # bgrp_nodes_driving = driving_net.get_node_ids(bgrp_xs, bgrp_ys)
+    bgrp_nodes_transit = transit_ped_net.get_node_ids(bgrp_xs, bgrp_ys)
+    bgrp_nodes_walking_biking = walking_biking_net.get_node_ids(bgrp_xs, bgrp_ys)
+    #%%
+    edges = transit_ped_net.edges_df[['from', 'to', 'vehicle_time', 'active_time', 'waiting_time']]
+    edges['fromto'] = edges['from'].astype(str) + '_' + edges['to'].astype(str)
+    edges.drop_duplicates(inplace=True)
+    edges.dropna(inplace=True)
+    edges = edges.groupby('fromto').mean()
+    edges.drop(columns=['from', 'to'], axis=1, inplace=True)
+    edges = edges.to_dict(orient='index')
 
-#%%
+    #%%
 
-travel_costs = {}
-# switch = 3
-walk_to_bike_time_ratio = 4 # 3mph -> 12mph
-highest_vehicle = 0
-highest_active = 0
-highest_waiting = 0
-highest_distance = 0
-count = 0
+    travel_costs = {}
+    # switch = 3
+    walk_to_bike_time_ratio = 4 # 3mph -> 12mph
+    highest_vehicle = 0
+    highest_active = 0
+    highest_waiting = 0
+    highest_distance = 0
+    count = 0
 
-for bgrp_id in ods.keys():
-    print(count)
-    count += 1
-    bgrp_id
-    travel_costs[bgrp_id] = {}
-    destinations = ods[bgrp_id]
-    for mode in ['walk', 'bike', 'transit']: # in ['drive', 'walk', 'bike', 'transit']:
-        travel_costs[bgrp_id][mode] = {}
-        if mode == 'drive':
-            # Lists to find paths from starting blockgroup to all others
-            origin_node = bgrp_nodes_driving[str(bgrp_id)]
-            nodes_a = [origin_node] * len(destinations)
-            nodes_b = list(map(lambda id: bgrp_nodes_driving[id], destinations))
-            # Calculate paths and store the vehicle times
-            vehicle_times = pd.Series(driving_net.shortest_path_lengths(nodes_a, nodes_b, 'vehicle_time'), destinations)
-            # TODO: replace this with path sum over the shortest path in terms of vehicle time
-            distance = pd.Series(driving_net.shortest_path_lengths(nodes_a, nodes_b, 'distance'), destinations)
-            # Remove outliers (for any unreachable nodes the time is set to a very high value)
-            next_max = vehicle_times[vehicle_times != vehicle_times.max()].max()
-            if next_max > highest_vehicle:
-                highest_vehicle = next_max
-            elif next_max == 0:
-                next_max = highest_vehicle
-            vehicle_times = vehicle_times.apply(lambda x: next_max if x == vehicle_times.max() else x)
-            next_max = distance[distance != distance.max()].max()
-            if next_max > highest_distance:
-                highest_distance = next_max
-            elif next_max == 0:
-                next_max = highest_distance
-            # Store the vehicle times and set the other costs to 0
-            distance = distance.apply(lambda x: next_max if x == distance.max() else x)
-            active_times = pd.Series([0] * len(destinations), destinations)
-            waiting_times = pd.Series([0] * len(destinations), destinations)
-        # Repeat above for walking and biking
-        elif mode == 'walk':
-            nodes_a = [bgrp_nodes_walking_biking[str(bgrp_id)]] * len(destinations)
-            nodes_b = list(map(lambda id: bgrp_nodes_walking_biking[id], destinations))
-            active_times = pd.Series(walking_biking_net.shortest_path_lengths(nodes_a, nodes_b, 'active_time'), destinations)
-            next_max = active_times[active_times != active_times.max()].max()
-            if next_max > highest_active:
-                highest_active = next_max
-            elif next_max == 0:
-                next_max = highest_active
-            active_times = active_times.apply(lambda x: next_max if x == active_times.max() else x)
-            vehicle_times = pd.Series([0] * len(destinations), destinations)
-            waiting_times = pd.Series([0] * len(destinations), destinations)
-
-        elif mode == 'bike':
-            nodes_a = [bgrp_nodes_walking_biking[str(bgrp_id)]] * len(destinations)
-            nodes_b = list(map(lambda id: bgrp_nodes_walking_biking[id], destinations))
-            active_times = pd.Series(walking_biking_net.shortest_path_lengths(nodes_a, nodes_b, 'active_time'), destinations)
-            next_max = active_times[active_times != active_times.max()].max()
-            if next_max > highest_active:
-                highest_active = next_max
-            elif next_max == 0:
-                next_max = highest_active
-            active_times = active_times.apply(lambda x: next_max if x == active_times.max() else x)
-            active_times = active_times.apply(lambda x: x / walk_to_bike_time_ratio)
-            vehicle_times = pd.Series([0] * len(destinations), destinations)
-            waiting_times = pd.Series([0] * len(destinations), destinations)
-
-        elif mode == 'transit':
-            # Lists to find paths from starting blockgroup to all others
-            nodes_a = [bgrp_nodes_transit[str(bgrp_id)]] * len(destinations)
-            nodes_b = list(map(lambda id: bgrp_nodes_transit[id], destinations))
-            # Find shortest paths by total time
-            shortest_paths = pd.Series(transit_ped_net.shortest_paths(nodes_a, nodes_b, 'weight'), destinations)
-            # Calculate the separate times for each type of time spent by summing each edge
-            vehicle_times = shortest_paths.apply(lambda path: sum_path_by_column(path, edges, 'vehicle_time'))
-            active_times = shortest_paths.apply(lambda path: sum_path_by_column(path, edges, 'active_time'))
-            waiting_times = shortest_paths.apply(lambda path: sum_path_by_column(path, edges, 'waiting_time'))
-            # Remove outliers (for any unreachable nodes the time is set to a very high value)
-            next_max = vehicle_times[vehicle_times != vehicle_times.max()].max()
-            if next_max > highest_vehicle:
-                highest_vehicle = next_max
-            elif next_max == 0:
-                next_max = highest_vehicle
-            vehicle_times = vehicle_times.apply(lambda x: next_max if x == vehicle_times.max() else x)
-            next_max = active_times[active_times != active_times.max()].max()
-            if next_max > highest_active:
-                highest_active = next_max
-            elif next_max == 0:
-                next_max = highest_active
-            active_times = active_times.apply(lambda x: next_max if x == active_times.max() else x)
-            next_max = waiting_times[waiting_times != waiting_times.max()].max()
-            if next_max > highest_waiting:
-                highest_waiting = next_max
-            elif next_max == 0:
-                next_max = highest_waiting
-            waiting_times = waiting_times.apply(lambda x: next_max if x == waiting_times.max() else x)
-        # Fill in travel costs dictionary
-        for bgrp2_id in destinations:
-            travel_costs[bgrp_id][mode][bgrp2_id] = {}
-            travel_costs[bgrp_id][mode][bgrp2_id]['waiting_time'] = waiting_times[bgrp2_id]
-            travel_costs[bgrp_id][mode][bgrp2_id]['vehicle_time'] = vehicle_times[bgrp2_id]
-            travel_costs[bgrp_id][mode][bgrp2_id]['active_time'] = active_times[bgrp2_id]
+    for bgrp_id in ods.keys():
+        print(count)
+        count += 1
+        bgrp_id
+        travel_costs[bgrp_id] = {}
+        destinations = ods[bgrp_id]
+        for mode in ['walk', 'bike', 'transit']: # in ['drive', 'walk', 'bike', 'transit']:
+            travel_costs[bgrp_id][mode] = {}
             if mode == 'drive':
-                travel_costs[bgrp_id][mode][bgrp2_id]['distance'] = distance[bgrp2_id]
-with open('./data/travel_costs_non_driving.p', 'wb') as f:
-    pickle.dump(travel_costs, f, protocol=pickle.HIGHEST_PROTOCOL) # save travel costs to file
-    # return travel_costs
+                # Lists to find paths from starting blockgroup to all others
+                origin_node = bgrp_nodes_driving[str(bgrp_id)]
+                nodes_a = [origin_node] * len(destinations)
+                nodes_b = list(map(lambda id: bgrp_nodes_driving[id], destinations))
+                # Calculate paths and store the vehicle times
+                vehicle_times = pd.Series(driving_net.shortest_path_lengths(nodes_a, nodes_b, 'vehicle_time'), destinations)
+                # TODO: replace this with path sum over the shortest path in terms of vehicle time
+                distance = pd.Series(driving_net.shortest_path_lengths(nodes_a, nodes_b, 'distance'), destinations)
+                # Remove outliers (for any unreachable nodes the time is set to a very high value)
+                next_max = vehicle_times[vehicle_times != vehicle_times.max()].max()
+                if next_max > highest_vehicle:
+                    highest_vehicle = next_max
+                elif next_max == 0:
+                    next_max = highest_vehicle
+                vehicle_times = vehicle_times.apply(lambda x: next_max if x == vehicle_times.max() else x)
+                next_max = distance[distance != distance.max()].max()
+                if next_max > highest_distance:
+                    highest_distance = next_max
+                elif next_max == 0:
+                    next_max = highest_distance
+                # Store the vehicle times and set the other costs to 0
+                distance = distance.apply(lambda x: next_max if x == distance.max() else x)
+                active_times = pd.Series([0] * len(destinations), destinations)
+                waiting_times = pd.Series([0] * len(destinations), destinations)
+            # Repeat above for walking and biking
+            elif mode == 'walk':
+                nodes_a = [bgrp_nodes_walking_biking[str(bgrp_id)]] * len(destinations)
+                nodes_b = list(map(lambda id: bgrp_nodes_walking_biking[id], destinations))
+                active_times = pd.Series(walking_biking_net.shortest_path_lengths(nodes_a, nodes_b, 'active_time'), destinations)
+                next_max = active_times[active_times != active_times.max()].max()
+                if next_max > highest_active:
+                    highest_active = next_max
+                elif next_max == 0:
+                    next_max = highest_active
+                active_times = active_times.apply(lambda x: next_max if x == active_times.max() else x)
+                vehicle_times = pd.Series([0] * len(destinations), destinations)
+                waiting_times = pd.Series([0] * len(destinations), destinations)
+
+            elif mode == 'bike':
+                nodes_a = [bgrp_nodes_walking_biking[str(bgrp_id)]] * len(destinations)
+                nodes_b = list(map(lambda id: bgrp_nodes_walking_biking[id], destinations))
+                active_times = pd.Series(walking_biking_net.shortest_path_lengths(nodes_a, nodes_b, 'active_time'), destinations)
+                next_max = active_times[active_times != active_times.max()].max()
+                if next_max > highest_active:
+                    highest_active = next_max
+                elif next_max == 0:
+                    next_max = highest_active
+                active_times = active_times.apply(lambda x: next_max if x == active_times.max() else x)
+                active_times = active_times.apply(lambda x: x / walk_to_bike_time_ratio)
+                vehicle_times = pd.Series([0] * len(destinations), destinations)
+                waiting_times = pd.Series([0] * len(destinations), destinations)
+
+            elif mode == 'transit':
+                # Lists to find paths from starting blockgroup to all others
+                nodes_a = [bgrp_nodes_transit[str(bgrp_id)]] * len(destinations)
+                nodes_b = list(map(lambda id: bgrp_nodes_transit[id], destinations))
+                # Find shortest paths by total time
+                shortest_paths = pd.Series(transit_ped_net.shortest_paths(nodes_a, nodes_b, 'weight'), destinations)
+                # Calculate the separate times for each type of time spent by summing each edge
+                vehicle_times = shortest_paths.apply(lambda path: sum_path_by_column(path, edges, 'vehicle_time'))
+                active_times = shortest_paths.apply(lambda path: sum_path_by_column(path, edges, 'active_time'))
+                waiting_times = shortest_paths.apply(lambda path: sum_path_by_column(path, edges, 'waiting_time'))
+                # Remove outliers (for any unreachable nodes the time is set to a very high value)
+                next_max = vehicle_times[vehicle_times != vehicle_times.max()].max()
+                if next_max > highest_vehicle:
+                    highest_vehicle = next_max
+                elif next_max == 0:
+                    next_max = highest_vehicle
+                vehicle_times = vehicle_times.apply(lambda x: next_max if x == vehicle_times.max() else x)
+                next_max = active_times[active_times != active_times.max()].max()
+                if next_max > highest_active:
+                    highest_active = next_max
+                elif next_max == 0:
+                    next_max = highest_active
+                active_times = active_times.apply(lambda x: next_max if x == active_times.max() else x)
+                next_max = waiting_times[waiting_times != waiting_times.max()].max()
+                if next_max > highest_waiting:
+                    highest_waiting = next_max
+                elif next_max == 0:
+                    next_max = highest_waiting
+                waiting_times = waiting_times.apply(lambda x: next_max if x == waiting_times.max() else x)
+            # Fill in travel costs dictionary
+            for bgrp2_id in destinations:
+                travel_costs[bgrp_id][mode][bgrp2_id] = {}
+                travel_costs[bgrp_id][mode][bgrp2_id]['waiting_time'] = waiting_times[bgrp2_id]
+                travel_costs[bgrp_id][mode][bgrp2_id]['vehicle_time'] = vehicle_times[bgrp2_id]
+                travel_costs[bgrp_id][mode][bgrp2_id]['active_time'] = active_times[bgrp2_id]
+                if mode == 'drive':
+                    travel_costs[bgrp_id][mode][bgrp2_id]['distance'] = distance[bgrp2_id]
+    with open('./data/travel_costs_non_driving.p', 'wb') as f:
+        pickle.dump(travel_costs, f, protocol=pickle.HIGHEST_PROTOCOL) # save travel costs to file
+    return travel_costs
 # %%
 
 def travel_costs_dict(bgrps, ods):
