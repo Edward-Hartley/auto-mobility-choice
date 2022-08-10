@@ -64,6 +64,20 @@ def gen_driving_net():
     driving_edges = urbanaccess_net.net_edges.copy()
     driving_nodes = urbanaccess_net.net_nodes.copy()
 
+    # reachable_nodes = driving_edges['to'].unique()
+    # escapable_nodes = driving_edges['from'].unique()
+    # connected_nodes = set(reachable_nodes) & set(escapable_nodes)
+    # while(len(connected_nodes) != driving_nodes.shape[0]):
+    #     print("doubly connected nodes", len(connected_nodes))
+    #     print("nodes in graph", driving_nodes.shape[0])
+    #     driving_nodes = driving_nodes[driving_nodes['id'].isin(connected_nodes)]
+    #     # driving_nodes.set_index('id', inplace=True)
+    #     driving_edges = driving_edges[driving_edges['from'].isin(connected_nodes) & driving_edges['to'].isin(connected_nodes)]
+    #     reachable_nodes = driving_edges['to'].unique()
+    #     escapable_nodes = driving_edges['from'].unique()
+    #     connected_nodes = set(reachable_nodes) & set(escapable_nodes)
+
+
     # This assumption is applied to a large proportion of the road map!
     # There are many NaNs
     driving_edges.fillna(30, inplace=True)
@@ -81,6 +95,7 @@ def gen_driving_net():
         driving_edges["to"],
         driving_edges[['vehicle_time', 'active_time', 'waiting_time', 'distance']],
         twoway=False)
+    
     return driving_net
 # %%
 def sum_path_by_column(path, edges, column):
@@ -139,9 +154,9 @@ def gen_travel_costs_dict(bgrps, ods):
     # !!! x=longitude, y=latitude
     bgrp_xs = pd.Series([bgrp['lng'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
     bgrp_ys = pd.Series([bgrp['lat'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
-    # bgrp_nodes_driving = driving_net.get_node_ids(bgrp_xs, bgrp_ys)
-    bgrp_nodes_transit = transit_ped_net.get_node_ids(bgrp_xs, bgrp_ys)
-    bgrp_nodes_walking_biking = walking_biking_net.get_node_ids(bgrp_xs, bgrp_ys)
+    bgrp_nodes_driving = driving_net.get_node_ids(bgrp_xs, bgrp_ys)
+    # bgrp_nodes_transit = transit_ped_net.get_node_ids(bgrp_xs, bgrp_ys)
+    # bgrp_nodes_walking_biking = walking_biking_net.get_node_ids(bgrp_xs, bgrp_ys)
     #%%
     edges = transit_ped_net.edges_df[['from', 'to', 'vehicle_time', 'active_time', 'waiting_time']]
     edges['fromto'] = edges['from'].astype(str) + '_' + edges['to'].astype(str)
@@ -168,7 +183,7 @@ def gen_travel_costs_dict(bgrps, ods):
         bgrp_id
         travel_costs[bgrp_id] = {}
         destinations = ods[bgrp_id]
-        for mode in ['walk', 'bike', 'transit']: # in ['drive', 'walk', 'bike', 'transit']:
+        for mode in ['drive']: # in ['drive', 'walk', 'bike', 'transit']:
             travel_costs[bgrp_id][mode] = {}
             if mode == 'drive':
                 # Lists to find paths from starting blockgroup to all others
@@ -183,13 +198,13 @@ def gen_travel_costs_dict(bgrps, ods):
                 next_max = vehicle_times[vehicle_times != vehicle_times.max()].max()
                 if next_max > highest_vehicle:
                     highest_vehicle = next_max
-                elif next_max == 0:
+                elif next_max < 1:
                     next_max = highest_vehicle
                 vehicle_times = vehicle_times.apply(lambda x: next_max if x == vehicle_times.max() else x)
                 next_max = distance[distance != distance.max()].max()
                 if next_max > highest_distance:
                     highest_distance = next_max
-                elif next_max == 0:
+                elif next_max < 500:
                     next_max = highest_distance
                 # Store the vehicle times and set the other costs to 0
                 distance = distance.apply(lambda x: next_max if x == distance.max() else x)
@@ -260,7 +275,7 @@ def gen_travel_costs_dict(bgrps, ods):
                 travel_costs[bgrp_id][mode][bgrp2_id]['active_time'] = active_times[bgrp2_id]
                 if mode == 'drive':
                     travel_costs[bgrp_id][mode][bgrp2_id]['distance'] = distance[bgrp2_id]
-    with open('./data/travel_costs_non_driving.p', 'wb') as f:
+    with open('./data/travel_costs_driving.p', 'wb') as f:
         pickle.dump(travel_costs, f, protocol=pickle.HIGHEST_PROTOCOL) # save travel costs to file
     return travel_costs
 # %%
