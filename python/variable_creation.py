@@ -9,6 +9,7 @@ from travel_costs import travel_costs_dict
 #%%
 
 all_trips = pd.read_csv('./data/full_sample_run/trips_filtered.csv')
+all_trips = all_trips.sample(frac = 0.2, random_state=42)
 all_people = pd.read_csv('./data/full_sample_run/people_filtered.csv')
 
 #%%
@@ -32,7 +33,7 @@ people_variables.set_index('person_id', inplace=True, drop=True)
 all_trips['mode'] = all_trips.apply(lambda row: row['mode'] if row['mode'] != 'CARPOOL' else 'PRIVATE_AUTO', axis=1)
 
 # Utility dictionaries and add integer encoding of mode choice
-modes = ['PRIVATE_AUTO', 'CARPOOL', 'WALKING', 'PUBLIC_TRANSIT', 'ON_DEMAND_AUTO', 'SHARED_BIKE', 'BIKING']
+modes = ['PRIVATE_AUTO', 'WALKING', 'PUBLIC_TRANSIT', 'ON_DEMAND_AUTO', 'SHARED_BIKE', 'BIKING']
 modes_dict = {i: mode for i, mode in enumerate(modes)}
 reverse_modes_dict = {mode: i for i, mode in enumerate(modes)}
 all_trips['mode_choice_int'] = all_trips['mode'].map(reverse_modes_dict)
@@ -83,17 +84,16 @@ n = all_trips.shape[0]
 
 # Calculate trip vehicle times
 all_trips['vt_PRIVATE_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'], axis=1)
-all_trips['vt_CARPOOL'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'], axis=1)
+# all_trips['vt_CARPOOL'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'], axis=1)
 all_trips['vt_WALKING'] = 0
 all_trips['vt_PUBLIC_TRANSIT'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['transit'][str(row['destination_bgrp'])]['vehicle_time'], axis=1)
-# all_trips['vt_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'] * 0.9 + (travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'] ** 2) * 0.003, axis=1)
-all_trips['vt_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'] * 1.2, axis=1)
+all_trips['vt_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'], axis=1)
 all_trips['vt_SHARED_BIKE'] = 0
 all_trips['vt_BIKING'] = 0
 
 # Calculate trip costs
 all_trips['tc_PRIVATE_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['distance'] * car_cost_per_mile / 1600 + car_cost_per_year / car_trips_per_year, axis=1)
-all_trips['tc_CARPOOL'] = all_trips['tc_PRIVATE_AUTO'] / 2
+# all_trips['tc_CARPOOL'] = all_trips['tc_PRIVATE_AUTO'] / 2
 all_trips['tc_WALKING'] = 0
 all_trips['tc_PUBLIC_TRANSIT'] = transit_cost
 all_trips['tc_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: shared_auto_base_fare + travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['distance'] * shared_auto_per_mile / 1600 + row['vt_ON_DEMAND_AUTO'] * shared_auto_per_minute, axis=1)
@@ -102,8 +102,9 @@ all_trips['tc_BIKING'] = bike_per_year / (221 * 2) # commuting twice per working
 
 # Calculate waiting times
 all_trips['wt_PUBLIC_TRANSIT'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['transit'][str(row['destination_bgrp'])]['waiting_time'], axis=1)
-all_trips['wt_CARPOOL'] = 1 + np.random.rand(n, 1)
-all_trips['wt_ON_DEMAND_AUTO'] = 2.5 + np.random.rand(n, 1) # TODO: find better estimate for waiting time, perhaps base it on the distance of origin from city center
+# all_trips['wt_CARPOOL'] = 1 + np.random.rand(n, 1)
+# all_trips['wt_ON_DEMAND_AUTO'] = all_trips['vt_PRIVATE_AUTO'] / 4
+all_trips['wt_ON_DEMAND_AUTO'] = 4
 
 # Calculate active times
 all_trips['at_WALKING'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['walk'][str(row['destination_bgrp'])]['active_time'], axis=1)
@@ -149,4 +150,17 @@ variables_no_na = variables_no_na[
 # Store the augmented data!
 variables_no_na.to_csv('data/full_sample_run/variables_wide.csv')
 
+# %%
+
+# Format blockgroups to the required input for the travel costs function
+blockgroups = all_trips[['destination_bgrp', 'destination_bgrp_lat', 'destination_bgrp_lng']].drop_duplicates()
+bgrps = {bgrp['destination_bgrp']: {'lat': bgrp['destination_bgrp_lat'], 'lng': bgrp['destination_bgrp_lng']} for _, bgrp in blockgroups.iterrows()}
+
+ods_df = all_trips[['origin_bgrp', 'destination_bgrp']].drop_duplicates()
+ods = ods_df.groupby('origin_bgrp').apply(lambda x: list(x['destination_bgrp'])).to_dict()
+
+key = 250250408013
+
+distances = pd.DataFrame(map(lambda id: [bgrps[id]['lat'], bgrps[id]['lng'], travel_costs_nd[key]['drive'][str(id)]['distance']], ods[key]), ods[key])
+distances.plot(kind='scatter', x=1, y=0, cmap='viridis', c=distances[2])
 # %%
