@@ -14,6 +14,8 @@ PUBLIC_TRANSIT = 2
 ON_DEMAND_AUTO = 3
 SHARED_BIKE = 4
 BIKING = 5
+modes = ['PRIVATE_AUTO', 'WALKING', 'PUBLIC_TRANSIT', 'ON_DEMAND_AUTO', 'SHARED_BIKE', 'BIKING']
+
 
 all_trips = pd.read_csv('data/full_sample_run/variables_wide.csv')
 # print(all_trips['mode'].value_counts() / len(all_trips))
@@ -81,7 +83,19 @@ all_trips_long = pl.convert_wide_to_long(all_trips,
                                         new_alt_id_name=custom_alt_id)
 
 all_trips_long['travel_cost'] = all_trips_long['travel_cost']/100
-all_trips_long['total_time'] = all_trips_long['vehicle_time'] + all_trips_long['waiting_time'] + all_trips_long['active_time']
+# all_trips_long['total_time'] = all_trips_long['vehicle_time'] + all_trips_long['waiting_time'] + all_trips_long['active_time']
+all_trips_long['rain_cover'] = all_trips_long.apply(lambda row: 1 if row['mode_id'] in [PRIVATE_AUTO, PUBLIC_TRANSIT, ON_DEMAND_AUTO] else 0, axis=1)
+
+all_observation_ids = all_trips_long['custom_id'].unique()
+np.random.seed(4)
+np.random.shuffle(all_observation_ids)
+estimate_size = 5000
+predict_size = 30000
+sample_observation_ids = all_observation_ids[:estimate_size]
+prediction_observations_ids = all_observation_ids[estimate_size: estimate_size + predict_size]
+
+prediction_trips = all_trips_long.loc[all_trips_long['custom_id'].isin(prediction_observations_ids)].copy()
+all_trips_long= all_trips_long.loc[all_trips_long['custom_id'].isin(sample_observation_ids)].copy()
 
 #%%
 
@@ -187,5 +201,84 @@ nested.get_statsmodels_summary()
 # %%
 all_trips['mode'].value_counts()
 # %%
-nested.print_summaries()
+# Predict probabilities for each observation in prediction set
+
+# prediction_trips['active_time'] = prediction_trips.apply(lambda row: row['active_time'] if row['mode_id'] != 4 else 0, axis=1)
+# prediction_trips['travel_cost'] = prediction_trips.apply(lambda row: row['travel_cost'] if row['mode_id'] != 4 else 0, axis=1)
+
+
+prediction_array = nested.predict(prediction_trips)
+prediction_trips['probability'] = prediction_array
+
+# Label rows for readability
+prediction_trips['mode'] = prediction_trips.apply(lambda row: modes[int(row['mode_id'])], axis=1)
+all_trips_long['mode'] = all_trips_long.apply(lambda row: modes[int(row['mode_id'])], axis=1)
+
+
+# Select subset of population to analyse
+# prediction_trips = prediction_trips[prediction_trips['employed'] == 0]
+
+# Calculate predicted proportions
+predicted_proportions = prediction_trips.groupby(['mode'])['probability'].sum().sort_values(ascending=False)
+actual_proportions = prediction_trips.groupby(['mode'])['mode_choice_int'].sum().sort_values(ascending=False)
+sample_proportions = all_trips_long.groupby(['mode'])['mode_choice_int'].sum().sort_values(ascending=False)
+
+# Calculate percentage difference between predicted and actual proportions
+difference = 0
+for mode in modes:
+    difference += abs(predicted_proportions[mode] - actual_proportions[mode])
+print("percentage_difference: ", difference/predict_size)
+
+sample_difference = 0
+for mode in modes:
+    sample_difference += abs(sample_proportions[mode] * (predict_size / estimate_size) - actual_proportions[mode])
+print("sample_percentage_difference: ", sample_difference/predict_size)
+
+# %%
+
+print(actual_proportions)
+print(predicted_proportions)
+
+### Current model: 210 -> 240 shared bikes, bikes have reasonable similarity to each other, nice
+
+# %%
+new_prediction_trips = prediction_trips.copy()
+new_prediction_trips['active_time'] = new_prediction_trips.apply(lambda row: row['active_time'] if row['mode_id'] != 4 else 0, axis=1)
+new_prediction_trips['travel_cost'] = new_prediction_trips.apply(lambda row: row['travel_cost'] if row['mode_id'] != 4 else 0, axis=1)
+
+
+prediction_array = nested.predict(new_prediction_trips)
+new_prediction_trips['probability'] = prediction_array
+
+# Label rows for readability
+new_prediction_trips['mode'] = new_prediction_trips.apply(lambda row: modes[int(row['mode_id'])], axis=1)
+all_trips_long['mode'] = all_trips_long.apply(lambda row: modes[int(row['mode_id'])], axis=1)
+
+
+# Select subset of population to analyse
+# new_prediction_trips = new_prediction_trips[new_prediction_trips['employed'] == 0]
+
+# Calculate predicted proportions
+predicted_proportions = new_prediction_trips.groupby(['mode'])['probability'].sum().sort_values(ascending=False)
+actual_proportions = new_prediction_trips.groupby(['mode'])['mode_choice_int'].sum().sort_values(ascending=False)
+sample_proportions = all_trips_long.groupby(['mode'])['mode_choice_int'].sum().sort_values(ascending=False)
+
+# Calculate percentage difference between predicted and actual proportions
+difference = 0
+for mode in modes:
+    difference += abs(predicted_proportions[mode] - actual_proportions[mode])
+print("percentage_difference: ", difference/predict_size)
+
+sample_difference = 0
+for mode in modes:
+    sample_difference += abs(sample_proportions[mode] * (predict_size / estimate_size) - actual_proportions[mode])
+print("sample_percentage_difference: ", sample_difference/predict_size)
+
+# %%
+
+print(actual_proportions)
+print(predicted_proportions)
+
+### Current model: 210 -> 240 shared bikes, bikes have reasonable similarity to each other, nice
+
 # %%
