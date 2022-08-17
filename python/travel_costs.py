@@ -80,7 +80,7 @@ def gen_driving_net():
 
     # This assumption is applied to a large proportion of the road map!
     # There are many NaNs
-    driving_edges.fillna(30, inplace=True)
+    driving_edges.fillna(60, inplace=True)
     driving_edges['maxspeed'] = driving_edges.apply(lambda x: re.sub('[^0-9]', '', str(x['maxspeed'])) if (re.sub('[^0-9]', '', str(x['maxspeed'])) != '') else 25, axis=1)
     driving_edges['maxspeed'] = driving_edges['maxspeed'].astype(int)
 
@@ -104,13 +104,6 @@ def sum_path_by_column(path, edges, column):
         time += edges[str(path[i]) + '_' + str(path[i+1])][column]
     return time
 
-
-# test data
-replica_path = '/home/dwarddd/MIT/auto-mobility-choice/python/data/full_sample_run/trips_thursday_mar2021-may2021_northeast_28filters_created07-26-2022.csv'
-replica_trips = pd.read_csv(replica_path)
-# blockgroups = replica_trips[['origin_bgrp', 'origin_bgrp_lat', 'origin_bgrp_lng']].drop_duplicates()
-# bgrps = [{'bgrp_id': bgrp['origin_bgrp'], 'lat': bgrp['origin_bgrp_lat'], 'lng': bgrp['origin_bgrp_lng']} for _, bgrp in blockgroups.iterrows()]
-
 # %%
 
 # TODO: instead of setting the unreachable nodes to max distance
@@ -124,11 +117,8 @@ replica_trips = pd.read_csv(replica_path)
 #   lng: float
 # Returns:
 # (Bgrp, (drive | walk | bike | transit), bgrp) -> (wait_time, vehicle_time, active_time)
-def gen_travel_costs_dict(bgrps, ods):
+def gen_driving_costs_dict(replica_trips):
     driving_net = gen_driving_net()
-    #%%
-    transit_ped_net, walking_biking_net = transit_walking_biking_nets()
-    #%%
 
     # Change in line with transit_net and driving_net.py
     bbox = (-71.79, 41.99, -70.67, 43.2566)
@@ -155,18 +145,6 @@ def gen_travel_costs_dict(bgrps, ods):
     bgrp_xs = pd.Series([bgrp['lng'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
     bgrp_ys = pd.Series([bgrp['lat'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
     bgrp_nodes_driving = driving_net.get_node_ids(bgrp_xs, bgrp_ys)
-    # bgrp_nodes_transit = transit_ped_net.get_node_ids(bgrp_xs, bgrp_ys)
-    # bgrp_nodes_walking_biking = walking_biking_net.get_node_ids(bgrp_xs, bgrp_ys)
-    #%%
-    edges = transit_ped_net.edges_df[['from', 'to', 'vehicle_time', 'active_time', 'waiting_time']]
-    edges['fromto'] = edges['from'].astype(str) + '_' + edges['to'].astype(str)
-    edges.drop_duplicates(inplace=True)
-    edges.dropna(inplace=True)
-    edges = edges.groupby('fromto').mean()
-    edges.drop(columns=['from', 'to'], axis=1, inplace=True)
-    edges = edges.to_dict(orient='index')
-
-    #%%
 
     travel_costs = {}
     # switch = 3
@@ -210,8 +188,78 @@ def gen_travel_costs_dict(bgrps, ods):
                 distance = distance.apply(lambda x: next_max if x == distance.max() else x)
                 active_times = pd.Series([0] * len(destinations), destinations)
                 waiting_times = pd.Series([0] * len(destinations), destinations)
-            # Repeat above for walking and biking
-            elif mode == 'walk':
+            # Fill in travel costs dictionary
+            for bgrp2_id in destinations:
+                travel_costs[bgrp_id][mode][bgrp2_id] = {}
+                travel_costs[bgrp_id][mode][bgrp2_id]['waiting_time'] = waiting_times[bgrp2_id]
+                travel_costs[bgrp_id][mode][bgrp2_id]['vehicle_time'] = vehicle_times[bgrp2_id]
+                travel_costs[bgrp_id][mode][bgrp2_id]['active_time'] = active_times[bgrp2_id]
+                if mode == 'drive':
+                    travel_costs[bgrp_id][mode][bgrp2_id]['distance'] = distance[bgrp2_id]
+    with open('./data/travel_costs_driving.p', 'wb') as f:
+        pickle.dump(travel_costs, f, protocol=pickle.HIGHEST_PROTOCOL) # save travel costs to file
+    return travel_costs
+
+def gen_transit_walking_biking_costs_dict(bgrps, ods):
+
+    transit_ped_net, walking_biking_net = transit_walking_biking_nets()
+
+
+    # Change in line with transit_net and driving_net.py
+    bbox = (-71.79, 41.99, -70.67, 43.2566)
+
+    # Remove trips finishing outside of the study area
+    all_trips = replica_trips[replica_trips.apply(lambda row: 
+        (row['destination_bgrp_lat'] < bbox[3]) &  
+        (row['destination_bgrp_lat'] > bbox[1]) &
+        (row['destination_bgrp_lng'] < bbox[2]) &
+        (row['destination_bgrp_lng'] > bbox[0]), axis=1)]
+    # Format blockgroups to the required input for the travel costs function
+    blockgroups = all_trips[['destination_bgrp', 'destination_bgrp_lat', 'destination_bgrp_lng']].drop_duplicates()
+    bgrps = [{'bgrp_id': bgrp['destination_bgrp'], 'lat': bgrp['destination_bgrp_lat'], 'lng': bgrp['destination_bgrp_lng']} for _, bgrp in blockgroups.iterrows()]
+
+    ods_df = all_trips[['origin_bgrp', 'destination_bgrp']].drop_duplicates()
+    ods = ods_df.groupby('origin_bgrp').apply(lambda x: list(x['destination_bgrp'])).to_dict()
+
+    # We have list of Origin, Destination
+    # and id -> lat lng dict
+    # we want oring, destination -> distance
+    # we make list 
+
+    # !!! x=longitude, y=latitude
+    bgrp_xs = pd.Series([bgrp['lng'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
+    bgrp_ys = pd.Series([bgrp['lat'] for bgrp in bgrps], [bgrp['bgrp_id'] for bgrp in bgrps])
+    bgrp_nodes_transit = transit_ped_net.get_node_ids(bgrp_xs, bgrp_ys)
+    bgrp_nodes_walking_biking = walking_biking_net.get_node_ids(bgrp_xs, bgrp_ys)
+
+    edges = transit_ped_net.edges_df[['from', 'to', 'vehicle_time', 'active_time', 'waiting_time']]
+    edges['fromto'] = edges['from'].astype(str) + '_' + edges['to'].astype(str)
+    edges.drop_duplicates(inplace=True)
+    edges.dropna(inplace=True)
+    edges = edges.groupby('fromto').mean()
+    edges.drop(columns=['from', 'to'], axis=1, inplace=True)
+    edges = edges.to_dict(orient='index')
+
+
+
+    travel_costs = {}
+    # switch = 3
+    walk_to_bike_time_ratio = 4 # 3mph -> 12mph
+    highest_vehicle = 0
+    highest_active = 0
+    highest_waiting = 0
+    highest_distance = 0
+    count = 0
+
+    for bgrp_id in ods.keys():
+        print(count)
+        count += 1
+        bgrp_id
+        travel_costs[bgrp_id] = {}
+        destinations = ods[bgrp_id]
+        for mode in ['walk', 'bike', 'transit']:
+            travel_costs[bgrp_id][mode] = {}
+            if mode == 'walk':
                 nodes_a = [bgrp_nodes_walking_biking[str(bgrp_id)]] * len(destinations)
                 nodes_b = list(map(lambda id: bgrp_nodes_walking_biking[id], destinations))
                 active_times = pd.Series(walking_biking_net.shortest_path_lengths(nodes_a, nodes_b, 'active_time'), destinations)
@@ -273,9 +321,7 @@ def gen_travel_costs_dict(bgrps, ods):
                 travel_costs[bgrp_id][mode][bgrp2_id]['waiting_time'] = waiting_times[bgrp2_id]
                 travel_costs[bgrp_id][mode][bgrp2_id]['vehicle_time'] = vehicle_times[bgrp2_id]
                 travel_costs[bgrp_id][mode][bgrp2_id]['active_time'] = active_times[bgrp2_id]
-                if mode == 'drive':
-                    travel_costs[bgrp_id][mode][bgrp2_id]['distance'] = distance[bgrp2_id]
-    with open('./data/travel_costs_driving.p', 'wb') as f:
+    with open('./data/travel_costs_non_driving.p', 'wb') as f:
         pickle.dump(travel_costs, f, protocol=pickle.HIGHEST_PROTOCOL) # save travel costs to file
     return travel_costs
 # %%
@@ -297,3 +343,16 @@ def travel_costs_dict(bgrps, ods):
         # travel_costs = gen_travel_costs_dict(bgrps, ods)
         print('non-driving costs not found')
     return travel_costs_driving, travel_costs_non_driving
+
+
+# %%
+
+# data
+replica_path = '/home/dwarddd/MIT/auto-mobility-choice/python/data/full_sample_run/trips_thursday_mar2021-may2021_northeast_28filters_created07-26-2022.csv'
+replica_trips = pd.read_csv(replica_path)
+# blockgroups = replica_trips[['origin_bgrp', 'origin_bgrp_lat', 'origin_bgrp_lng']].drop_duplicates()
+# bgrps = [{'bgrp_id': bgrp['origin_bgrp'], 'lat': bgrp['origin_bgrp_lat'], 'lng': bgrp['origin_bgrp_lng']} for _, bgrp in blockgroups.iterrows()]
+
+gen_driving_costs_dict(replica_trips)
+
+# %%
