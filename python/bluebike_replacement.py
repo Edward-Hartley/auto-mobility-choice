@@ -150,3 +150,12 @@ print(all_trips['mode'].value_counts())
 store_data(all_trips, './data/full_sample_run/trips_bb_replacements.csv')
 
 # %%
+
+bb_trips_origins = bb_trips[['end station latitude', 'end station longitude']].value_counts()
+pd.DataFrame(bb_trips_origins).reset_index().plot(kind='scatter', x='end station longitude', y='end station latitude', s=bb_trips_origins.values, alpha=0.5)
+# %%
+
+
+shared_trips_origins = all_biking_trips[all_biking_trips['mode'] == 'SHARED_BIKE'][['destination_bgrp_lng', 'destination_bgrp_lat']].value_counts()
+pd.DataFrame(shared_trips_origins).reset_index().plot(kind='scatter', x='destination_bgrp_lng', y='destination_bgrp_lat', s=shared_trips_origins.values, alpha=0.5)
+# %%
