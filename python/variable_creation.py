@@ -9,7 +9,7 @@ from travel_costs import travel_costs_dict
 #%%
 
 all_trips = pd.read_csv('./data/full_sample_run/trips_filtered.csv')
-all_trips = all_trips.sample(frac = 0.2, random_state=42)
+all_trips = all_trips.sample(frac = 1, random_state=42)
 all_people = pd.read_csv('./data/full_sample_run/people_filtered.csv')
 
 #%%
@@ -41,7 +41,7 @@ all_trips['mode_choice_int'] = all_trips['mode'].map(reverse_modes_dict)
 # In logit based model, commuting is implied by employed + rush hour
 all_trips['commuting'] = all_trips.apply(lambda row: (row['previous_activity_type'] == 'WORK') | (row['travel_purpose'] == 'WORK'), axis=1)
 # Three highest traffic hours, could also add morning rush hour
-all_trips['rush_hour'] = all_trips.apply(lambda row: row['start_local_hour'] in [15, 16, 17], axis=1)
+all_trips['rush_hour'] = all_trips.apply(lambda row: row['start_local_hour'] in [7, 8, 9, 15, 16, 17], axis=1)
 
 # Sources: uber website, AAA, bluebikes site, MoCho
 car_cost_per_mile = 0.15
@@ -83,11 +83,11 @@ travel_costs_d, travel_costs_nd = travel_costs_dict(bgrps, ods)
 n = all_trips.shape[0]
 
 # Calculate trip vehicle times
-all_trips['vt_PRIVATE_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'], axis=1)
+all_trips['vt_PRIVATE_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'] * 1.2 if row['rush_hour'] else 1, axis=1)
 # all_trips['vt_CARPOOL'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'], axis=1)
 all_trips['vt_WALKING'] = 0
-all_trips['vt_PUBLIC_TRANSIT'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['transit'][str(row['destination_bgrp'])]['vehicle_time'], axis=1)
-all_trips['vt_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'], axis=1)
+all_trips['vt_PUBLIC_TRANSIT'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['transit'][str(row['destination_bgrp'])]['vehicle_time'] * 1.2 if row['rush_hour'] else 1, axis=1)
+all_trips['vt_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['vehicle_time'] * 1.2 if row['rush_hour'] else 1, axis=1)
 all_trips['vt_SHARED_BIKE'] = 0
 all_trips['vt_BIKING'] = 0
 
@@ -97,20 +97,23 @@ all_trips['tc_PRIVATE_AUTO'] = all_trips.apply(lambda row: travel_costs_d[row['o
 all_trips['tc_WALKING'] = 0
 all_trips['tc_PUBLIC_TRANSIT'] = transit_cost
 all_trips['tc_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: shared_auto_base_fare + travel_costs_d[row['origin_bgrp']]['drive'][str(row['destination_bgrp'])]['distance'] * shared_auto_per_mile / 1600 + row['vt_ON_DEMAND_AUTO'] * shared_auto_per_minute, axis=1)
-all_trips['tc_SHARED_BIKE'] = all_trips.apply(lambda row: shared_bike_yearly_membership_cost / (221 * 2) if row['commuting'] else shared_bike_cost, axis=1)
 all_trips['tc_BIKING'] = bike_per_year / (221 * 2) # commuting twice per working day
 
 # Calculate waiting times
-all_trips['wt_PUBLIC_TRANSIT'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['transit'][str(row['destination_bgrp'])]['waiting_time'], axis=1)
+all_trips['wt_PUBLIC_TRANSIT'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['transit'][str(row['destination_bgrp'])]['waiting_time'] * 1.5, axis=1)
 # all_trips['wt_CARPOOL'] = 1 + np.random.rand(n, 1)
-# all_trips['wt_ON_DEMAND_AUTO'] = all_trips['vt_PRIVATE_AUTO'] / 4
-all_trips['wt_ON_DEMAND_AUTO'] = 4
+all_trips['wt_ON_DEMAND_AUTO'] = all_trips.apply(lambda row: 7 if row['vt_PRIVATE_AUTO'] < 20 else 7 + (row['vt_PRIVATE_AUTO'] - 20) / 4, axis=1)
+# all_trips['wt_ON_DEMAND_AUTO'] = 4
 
 # Calculate active times
 all_trips['at_WALKING'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['walk'][str(row['destination_bgrp'])]['active_time'], axis=1)
 all_trips['at_PUBLIC_TRANSIT'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['transit'][str(row['destination_bgrp'])]['active_time'], axis=1)
-all_trips['at_SHARED_BIKE'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['bike'][str(row['destination_bgrp'])]['active_time'], axis=1) + 2.5 # TODO: find better estimate for active time
-all_trips['at_BIKING'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['bike'][str(row['destination_bgrp'])]['active_time'], axis=1)
+all_trips['bt_SHARED_BIKE'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['bike'][str(row['destination_bgrp'])]['active_time'], axis=1) - 0.5 # TODO: find better estimate for active time
+all_trips['bt_BIKING'] = all_trips.apply(lambda row: travel_costs_nd[row['origin_bgrp']]['bike'][str(row['destination_bgrp'])]['active_time'], axis=1)
+all_trips['at_SHARED_BIKE'] = all_trips.apply(lambda row: 6 if row['bt_SHARED_BIKE'] < 60 else 6 + (row['at_WALKING'] - 120), axis=1)  # TODO: find better estimate for active time
+# all_trips['at_SHARED_BIKE'] = 4
+
+all_trips['tc_SHARED_BIKE'] = all_trips.apply(lambda row: (shared_bike_yearly_membership_cost / (221 * 2) if row['commuting'] else shared_bike_cost) + (0 if row['bt_SHARED_BIKE'] < 30 else shared_bike_cost * np.floor(row['bt_SHARED_BIKE']/30 - 1)) , axis=1)
 
 
 # %%

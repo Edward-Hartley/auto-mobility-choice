@@ -353,6 +353,6 @@ replica_trips = pd.read_csv(replica_path)
 # blockgroups = replica_trips[['origin_bgrp', 'origin_bgrp_lat', 'origin_bgrp_lng']].drop_duplicates()
 # bgrps = [{'bgrp_id': bgrp['origin_bgrp'], 'lat': bgrp['origin_bgrp_lat'], 'lng': bgrp['origin_bgrp_lng']} for _, bgrp in blockgroups.iterrows()]
 
-gen_driving_costs_dict(replica_trips)
+# gen_driving_costs_dict(replica_trips)
 
 # %%

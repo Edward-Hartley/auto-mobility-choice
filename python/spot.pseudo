@@ -1,0 +1,32 @@
+field of view = 100%
+Repeat:
+
+Scan nearby tags/objects
+Determine possible interactions
+If # interactions = 0:
+    relocate()
+If 0 < # interactions < 5:
+	For each interaction:
+		Ask
+        yes:
+            interact()
+            interacted = True
+    if not interacted:
+        relocate()
+if # interactions > 5:
+    narrow_interactions()
+    "Should I interact with something directly in front or to the side?"
+
+
+
+
+func relocate() {
+    // move to a new location
+    Would you like Spot to move forwards or turn?
+    Forwards:
+        Spot very slowly moves forwards, until “No” is thought
+    Turn:
+        Left or Right?
+        Either:
+            Spot slowly turns until no
+}
